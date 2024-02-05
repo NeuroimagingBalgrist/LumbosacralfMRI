@@ -1,0 +1,9 @@
+#!/bin/bash
+
+dicom=$1
+subject=$2
+
+rm -rf $subject/nifti
+mkdir -p $subject/nifti
+
+dcm2niix -b n -f "%s_%p" -o $subject/nifti $dicom

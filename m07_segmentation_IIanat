@@ -1,0 +1,18 @@
+#!/bin/bash
+
+anat=$1
+
+DIR=$(dirname $(dirname $(dirname $anat)))
+DIR_anat=$(dirname $anat)
+
+segment=$DIR/func/derivatives/segment_jim
+
+# MASK ANAT
+cp $segment/megre3d_cr_msc_jim.nii $DIR_anat
+
+matlab -nodisplay -r "m07_segmentation_II_anat('"$DIR_anat/megre3d_cr_msc_jim.nii"'); quit"
+
+sct_maths \
+  -i $DIR_anat/megre3d_cr_msc_jim_cor.nii \
+  -bin 0.01 \
+  -o $DIR_anat/megre3d_cr_msc_man.nii

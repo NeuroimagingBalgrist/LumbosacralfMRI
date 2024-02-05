@@ -1,0 +1,46 @@
+#!/bin/bash
+
+
+subjectall=( \
+  # sub-01 \
+  # sub-02 \
+  # sub-03 \
+  # sub-04 \
+  # sub-05 \
+  # sub-06 \
+  # sub-07 \
+  # sub-08 \
+  # sub-09 \
+  # sub-10 \
+  # sub-11 \
+  # sub-12 \
+  sub-03n \
+  sub-06n \
+  sub-13n\
+  )
+
+sequenceall=( \
+  ovs_pf68 \
+  zoomit_pf68 \
+  zoomit_pf78 \
+  zoomit_pfno \
+  )
+
+
+PART1=/media/chkuendig/chkuendig/LufMRI/10_protcol_optimization/03_base_comp/
+PART2=/func/derivatives/
+PART31=/02_run1/regressors/*outlier*.nii
+PART32=/03_run2/regressors/*outlier*.nii
+
+for sub in ${!subjectall[@]}; do
+  subject=${subjectall[$sub]}
+  echo ${subject}
+
+  for seq  in ${!sequenceall[@]}; do
+    sequence=${sequenceall[$seq]}
+
+    ls ${PART1}${subject}${PART2}${sequence}${PART31} | wc -l
+    ls ${PART1}${subject}${PART2}${sequence}${PART32} | wc -l
+
+  done
+done

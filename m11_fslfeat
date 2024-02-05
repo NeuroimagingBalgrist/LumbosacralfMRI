@@ -1,0 +1,59 @@
+#!/bin/bash
+
+input=$1
+
+DIR=$(dirname $input)
+NAME=$(basename $input)
+
+rm -rf $DIR/lvl1.feat
+
+file="$DIR/${NAME::-4}_mc_sm_fslfeat.fsf"
+cp m11_fslfeat.fsf $file
+
+conditions="$DIR/${NAME::4}_conditions.txt"
+cp m11_fslfeat_conditions.txt $conditions
+
+
+search='outputdirectory_tag'
+replace="$DIR/lvl1"
+sed -i "s+$search+$replace+" $file
+
+header=$(fslhd $input  | grep "dim4" | awk '{print $2}')
+search='NVolumes_tag'
+replace="$(echo ${header} | awk '{print $1}')"
+sed -i "s+$search+$replace+" $file
+
+search='TR_tag'
+replace="$(echo ${header} | awk '{print $2}')"
+sed -i "s+$search+$replace+" $file
+
+search='regressorlist_tag'
+replace="$DIR/regressors/${NAME::-4}_mc_regressors_list.txt"
+sed -i "s+$search+$replace+" $file
+
+search='treshholdmask_tag'
+replace="$DIR/${NAME::-4}_mc_msc_man.nii"
+sed -i "s+$search+$replace+" $file
+
+search='image_tag'
+replace="$DIR/${NAME::-4}_mc_sm"
+sed -i "s+$search+$replace+" $file
+
+search='condition_tag'
+replace="$conditions"
+sed -i "s+$search+$replace+" $file
+
+cp m11_fslfeat_conditions.txt $(dirname $DIR)
+
+echo 'Running FSL FEAT for '$NAME
+feat $file
+
+
+
+
+# Stats get overwriten during registration, make copy to preserve.
+DIRstats=$DIR/lvl1.feat/stats
+DIRold=$DIR/reg_anat/stats_old
+rm -rf $DIRold
+mkdir -p $DIRold
+mv $DIRstats/z*tat*.nii.gz $DIRold

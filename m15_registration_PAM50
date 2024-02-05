@@ -1,0 +1,36 @@
+#!/bin/bash
+
+anat=$1
+
+txtfile_csa=$(dirname $(dirname $(dirname $anat)))/func/derivatives/segment_jim/megre3d_cr.txt
+txtfile_tip=$(dirname $(dirname $(dirname $anat)))/func/derivatives/segment_jim/megre3d_cr_tip.txt
+output=$(dirname $anat)/reg_temp
+label=$output/$(basename ${anat::-4})_label.nii
+
+rm -rf $output
+mkdir -p $output
+
+# Create LSE label (ID 19) from CSA data and fix value
+matlab -nodisplay -r "m15_registration_PAM50('"$anat"', '"$txtfile_csa"'); quit"
+
+# Fix weird values (probably a problem with spm_write_vol, doesnt seem to be necessary with newer images)
+sct_maths -i $label -bin 18 -o $label
+sct_maths -i $label -mul 19 -o $label
+
+# Add tip label (conus medullaris, ID 21) from segmentation textfile
+tip_slice=$(<$txtfile_tip)
+sct_label_utils \
+  -i $label \
+  -create-add 48,48,$tip_slice,21 \
+  -o $label
+
+# Regist to PAM50 template (must use -ldisc argument!)
+sct_register_to_template \
+  -i $anat \
+	-s ${anat::-4}_msc_man.nii \
+	-ldisc $label \
+	-c t2 \
+	-ref template \
+	-ofolder $output
+
+rm straightening.cache

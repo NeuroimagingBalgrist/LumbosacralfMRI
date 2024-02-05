@@ -1,0 +1,41 @@
+#!/bin/bash
+
+input=$1
+output=${input::-4}_mc.nii
+
+DIR=$(dirname $input)
+
+mcflirt -in $input \
+  -meanvol \
+  -spline_final -cost leastsquares -report \
+  -o $DIR/temp_mcf.nii
+
+sct_maths -i $DIR/temp_mcf.nii.gz -mean t -o $DIR/temp_mcf_mean.nii
+sct_get_centerline -i $DIR/temp_mcf_mean.nii -c t2s -o $DIR/temp_mcf_mean_centerline.nii
+sct_create_mask -i $DIR/temp_mcf_mean.nii -p centerline,$DIR/temp_mcf_mean_centerline.nii -size 20 -f cylinder -o $DIR/temp_mcf_mean_maskcy.nii
+
+sct_fmri_moco -i $DIR/temp_mcf.nii.gz \
+  -m $DIR/temp_mcf_mean_maskcy.nii \
+  -g 1 -param poly=1,iterAvg=1 -x spline \
+  -ofolder $DIR
+
+gzip -f -d $DIR/temp_mcf_moco.nii.gz
+
+mv $DIR/temp_mcf_moco.nii \
+  $output
+
+mkdir -p $DIR/regressors
+NAMEout=$(basename $output)
+
+gzip -f -d $DIR/moco_params_x.nii.gz
+mv $DIR/moco_params_x.nii \
+  $DIR/regressors/${NAMEout::-4}_params_x.nii
+
+gzip -f -d $DIR/moco_params_y.nii.gz
+mv $DIR/moco_params_y.nii \
+  $DIR/regressors/${NAMEout::-4}_params_y.nii
+
+sct_maths -i $output -mean t -o ${output::-4}_mean.nii
+
+rm $DIR/temp*
+rm $DIR/moco_params*

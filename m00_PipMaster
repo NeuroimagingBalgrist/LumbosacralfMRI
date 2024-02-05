@@ -1,0 +1,242 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+directory=*
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+subjectall=( \
+  $directory/sub-01 \
+  $directory/sub-02 \
+  $directory/sub-03 \
+  $directory/sub-03n \
+  $directory/sub-04 \
+  $directory/sub-05 \
+  $directory/sub-06 \
+  $directory/sub-06n \
+  $directory/sub-07 \
+  $directory/sub-08 \
+  $directory/sub-09 \
+  $directory/sub-10 \
+  $directory/sub-11 \
+  $directory/sub-12 \
+  $directory/sub-13n \
+  )
+
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+# Loop around subjects. Change into script dir and create the necessary names and folders.
+for i in ${!subjectall[@]}; do
+
+subject=${subjectall[$i]}
+echo -e "\033[7;97m ==================== Working on ==================== \033[0m"
+echo -e "\033[7;97m $subject \033[0m"
+echo -e "\033[7;97m ==================================================== \033[0m"
+
+cd $(dirname $0)
+
+dicom=$subject/dicomdir
+anat_dir=$subject/anat
+anat=$anat_dir/derivatives/megre3d_cr.nii
+
+
+ovs68_rs=$subject/func/ovs_pf68_TE20_rs.nii
+ovs68_run1=$subject/func/ovs_pf68_TE20_run1.nii
+ovs68_run2=$subject/func/ovs_pf68_TE20_run2.nii
+zit68_rs=$subject/func/zoomit_pf68_TE28_rs.nii
+zit68_run1=$subject/func/zoomit_pf68_TE28_run1.nii
+zit68_run2=$subject/func/zoomit_pf68_TE28_run2.nii
+zit78_rs=$subject/func/zoomit_pf78_TE35_rs.nii
+zit78_run1=$subject/func/zoomit_pf78_TE35_run1.nii
+zit78_run2=$subject/func/zoomit_pf78_TE35_run2.nii
+zitno_rs=$subject/func/zoomit_pfno_TE42_rs.nii
+zitno_run1=$subject/func/zoomit_pfno_TE42_run1.nii
+zitno_run2=$subject/func/zoomit_pfno_TE42_run2.nii
+
+covs68_rs=$subject/func/derivatives/ovs_pf68/01_rest/ovs_pf68_rs_cr.nii
+covs68_run1=$subject/func/derivatives/ovs_pf68/02_run1/ovs_pf68_run1_cr.nii
+covs68_run2=$subject/func/derivatives/ovs_pf68/03_run2/ovs_pf68_run2_cr.nii
+czit68_rs=$subject/func/derivatives/zoomit_pf68/01_rest/zoomit_pf68_rs_cr.nii
+czit68_run1=$subject/func/derivatives/zoomit_pf68/02_run1/zoomit_pf68_run1_cr.nii
+czit68_run2=$subject/func/derivatives/zoomit_pf68/03_run2/zoomit_pf68_run2_cr.nii
+czit78_rs=$subject/func/derivatives/zoomit_pf78/01_rest/zoomit_pf78_rs_cr.nii
+czit78_run1=$subject/func/derivatives/zoomit_pf78/02_run1/zoomit_pf78_run1_cr.nii
+czit78_run2=$subject/func/derivatives/zoomit_pf78/03_run2/zoomit_pf78_run2_cr.nii
+czitno_rs=$subject/func/derivatives/zoomit_pfno/01_rest/zoomit_pfno_rs_cr.nii
+czitno_run1=$subject/func/derivatives/zoomit_pfno/02_run1/zoomit_pfno_run1_cr.nii
+czitno_run2=$subject/func/derivatives/zoomit_pfno/03_run2/zoomit_pfno_run2_cr.nii
+
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 02 Convert ==================== \033[0m"
+bash m02_convert $dicom $subject
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 03 Sorting ==================== \033[0m"
+bash m03_sorting $subject
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 04 Anat Preprocessing ==================== \033[0m"
+bash m04_anat_preproc $anat_dir
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 05 Cropping ==================== \033[0m"
+bash m05_cropping $ovs68_rs $covs68_rs
+bash m05_cropping $ovs68_run1 $covs68_run1
+bash m05_cropping $ovs68_run2 $covs68_run2
+bash m05_cropping $zit68_rs $czit68_rs
+bash m05_cropping $zit68_run1 $czit68_run1
+bash m05_cropping $zit68_run2 $czit68_run2
+bash m05_cropping $zit78_rs $czit78_rs
+bash m05_cropping $zit78_run1 $czit78_run1
+bash m05_cropping $zit78_run2 $czit78_run2
+bash m05_cropping $zitno_rs $czitno_rs
+bash m05_cropping $zitno_run1 $czitno_run1
+bash m05_cropping $zitno_run2 $czitno_run2
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 06 Motion Correction ==================== \033[0m"
+bash m06_motioncorrection $covs68_rs
+bash m06_motioncorrection $covs68_run1
+bash m06_motioncorrection $covs68_run2
+bash m06_motioncorrection $czit68_rs
+bash m06_motioncorrection $czit68_run1
+bash m06_motioncorrection $czit68_run2
+bash m06_motioncorrection $czit78_rs
+bash m06_motioncorrection $czit78_run1
+bash m06_motioncorrection $czit78_run2
+bash m06_motioncorrection $czitno_rs
+bash m06_motioncorrection $czitno_run1
+bash m06_motioncorrection $czitno_run2
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 07 Segmentation ==================== \033[0m"
+echo -e "\033[7;109m ===== 07 Segmentation I ===== \033[0m"
+bash m07_segmentation_I $anat $covs68_run1
+bash m07_segmentation_I $anat $czit68_run1
+bash m07_segmentation_I $anat $czit78_run1
+bash m07_segmentation_I $anat $czitno_run1
+echo -e "\033[7;109m ===== 07 Segmentation Manual in JIM 7 ===== \033[0m"
+
+echo -e "\033[7;109m ===== 07 Segmentation II ===== \033[0m"
+bash m07_segmentation_IIanat $anat
+bash m07.2_segmentation_IIfunc $covs68_run1
+bash m07.2_segmentation_IIfunc $czit68_run1
+bash m07.2_segmentation_IIfunc $czit78_run1
+bash m07.2_segmentation_IIfunc $czitno_run1
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 08 aCompCor ==================== \033[0m"
+bash m08_aCompCor $covs68_run1
+bash m08_aCompCor $covs68_run2
+bash m08_aCompCor $czit68_run1
+bash m08_aCompCor $czit68_run2
+bash m08_aCompCor $czit78_run1
+bash m08_aCompCor $czit78_run2
+bash m08_aCompCor $czitno_run1
+bash m08_aCompCor $czitno_run2
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 09 Regressors ==================== \033[0m"
+bash m09_regressors $covs68_run1
+bash m09_regressors $covs68_run2
+bash m09_regressors $czit68_run1
+bash m09_regressors $czit68_run2
+bash m09_regressors $czit78_run1
+bash m09_regressors $czit78_run2
+bash m09_regressors $czitno_run1
+bash m09_regressors $czitno_run2
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 10 Smoothing ==================== \033[0m"
+bash m10_smooth $covs68_run1
+bash m10_smooth $covs68_run2
+bash m10_smooth $czit68_run1
+bash m10_smooth $czit68_run2
+bash m10_smooth $czit78_run1
+bash m10_smooth $czit78_run2
+bash m10_smooth $czitno_run1
+bash m10_smooth $czitno_run2
+
+# --------------------------------------------------------------------------------------------------------------------------------
+# Always also run 09 Regressors before this
+echo -e "\033[7;109m ==================== 11 FSL FEAT ==================== \033[0m"
+bash m11_fslfeat $covs68_run1
+bash m11_fslfeat $covs68_run2
+bash m11_fslfeat $czit68_run1
+bash m11_fslfeat $czit68_run2
+bash m11_fslfeat $czit78_run1
+bash m11_fslfeat $czit78_run2
+bash m11_fslfeat $czitno_run1
+bash m11_fslfeat $czitno_run2
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 12 Registration ==================== \033[0m"
+bash m12_registration $covs68_run1 $anat
+bash m12_registration $covs68_run2 $anat
+bash m12_registration $czit68_run1 $anat
+bash m12_registration $czit68_run2 $anat
+bash m12_registration $czit78_run1 $anat
+bash m12_registration $czit78_run2 $anat
+bash m12_registration $czitno_run1 $anat
+bash m12_registration $czitno_run2 $anat
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 13 Stats Transformation ==================== \033[0m"
+bash m13_stat_trafo $covs68_run1 $anat
+bash m13_stat_trafo $covs68_run2 $anat
+bash m13_stat_trafo $czit68_run1 $anat
+bash m13_stat_trafo $czit68_run2 $anat
+bash m13_stat_trafo $czit78_run1 $anat
+bash m13_stat_trafo $czit78_run2 $anat
+bash m13_stat_trafo $czitno_run1 $anat
+bash m13_stat_trafo $czitno_run2 $anat
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 14 FSL FEAT Higher Level ==================== \033[0m"
+bash m14_fslfeat_lvl2 $covs68_run1 $anat
+bash m14_fslfeat_lvl2 $czit68_run1 $anat
+bash m14_fslfeat_lvl2 $czit78_run1 $anat
+bash m14_fslfeat_lvl2 $czitno_run1 $anat
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 15 Registation to PAM50 ==================== \033[0m"
+bash m15_registration_PAM50 $anat
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 16 Stats Transformation to PAM50 ==================== \033[0m"
+bash m16_stat_trafo_PAM50 $covs68_run1 $anat
+bash m16_stat_trafo_PAM50 $czit68_run1 $anat
+bash m16_stat_trafo_PAM50 $czit78_run1 $anat
+bash m16_stat_trafo_PAM50 $czitno_run1 $anat
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 20 Backtransformation for Right Ventral Mask ==================== \033[0m"
+bash m20_mean_signal $subject
+
+
+#--------------------------------------------------------------------------------------------------------------------------------
+done
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 17 Randomise ==================== \033[0m"
+bash m17_grplvl_randomise $directory
+bash m17_grplvl_noise $directory
+
+# --------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 18 Crop and Update Results ==================== \033[0m"
+bash m18_grplvl_crop $directory
+
+# # Check Masks in grplvl_mask else run
+# bash m18_grplvl_masks $directory
+
+# bash m18_sublvl_megre $directory
+
+
+#--------------------------------------------------------------------------------------------------------------------------------
+runmin=$((SECONDS/60))
+runsec=$((SECONDS-60*runmin))
+echo -e "\033[7;97m This Script ran for $runmin minutes $runsec seconds! \033[0m"

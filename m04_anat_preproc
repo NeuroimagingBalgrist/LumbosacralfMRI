@@ -1,0 +1,16 @@
+#!/bin/bash
+
+input=$1/megre3d_psnorm/megre3d_5echoes_meas-1_echo-1.nii
+
+jobfile=m04_aver_meas_jobfile.mat
+
+matlab -nodisplay -r \
+  "disp('Averaging Echos'); m04_aver_echo('"$input"', 5, 6); disp('Averaging Measurements'); m04_aver_meas('"$input"', 5, [1 2 3 4 5 6], 1, '"$jobfile"'); quit"
+
+cp $1/megre3d_psnorm/megre3d_5echoes_meas-avgslr6_echo-rms-12345.nii $1/derivatives/megre3d.nii
+
+sct_crop_image \
+  -i $1/derivatives/megre3d.nii \
+  -xmin 148 -xmax 244 \
+  -ymin 148 -ymax 244 \
+  -o $1/derivatives/megre3d_cr.nii

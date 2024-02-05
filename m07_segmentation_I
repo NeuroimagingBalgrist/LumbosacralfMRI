@@ -1,0 +1,18 @@
+#!/bin/bash
+
+input=${2::-4}_mc.nii
+
+DIR=$(dirname $(dirname $(dirname $input)))
+NAME=$(basename $input)
+
+segment=$DIR/segment_jim
+mkdir -p $segment
+
+cp $1 $segment
+cp ${input::-4}_mean.nii $segment
+
+new_anat=$segment/$(basename $1)
+new_epimean=$segment/${NAME::-4}_mean.nii
+
+
+matlab -nodisplay -r "m07_segmentation_I('"$new_epimean"'); m07_segmentation_I('"$new_anat"'); quit"

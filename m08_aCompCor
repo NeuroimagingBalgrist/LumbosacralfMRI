@@ -1,0 +1,27 @@
+#!/bin/bash
+
+input=${1::-4}_mc.nii
+
+DIR=$(dirname $input)
+NAME=$(basename $input)
+
+
+mkdir -p $DIR/aCompCor
+cp $input $DIR/aCompCor
+
+matlab -nodisplay -r "m08_acompcor('"$DIR/aCompCor/$NAME"'); quit"
+
+
+echo -e "\033[7;100m ========== Correct Header ========== \033[0m"
+
+for i in 1 2 3 4 5
+do
+  num=`printf %02g $i`
+  sct_image \
+    -i $DIR/regressors/${NAME::-4}_params_x.nii \
+    -copy-header $DIR/regressors/${NAME::-4}_acompcor_pc${num}.nii \
+    -o $DIR/regressors/${NAME::-4}_acompcor_pc${num}.nii
+done
+
+
+rm $DIR/aCompCor/*noiseROI*

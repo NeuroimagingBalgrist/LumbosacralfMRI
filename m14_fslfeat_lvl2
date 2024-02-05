@@ -1,0 +1,35 @@
+#!/bin/bash
+
+input=$1
+anat=$2
+
+DIR=$(dirname $(dirname $input))
+NAME=$(basename $input)
+
+rm -rf $DIR/lvl2.gfeat
+
+file="$DIR/${NAME::-12}_fslfeat.fsf"
+
+cp m14_fslfeat_lvl2.fsf $file
+
+search='outputdirectory_tag'
+replace="$DIR/lvl2"
+sed -i "s+$search+$replace+" $file
+
+search='treshholdmask_tag'
+replace="${anat::-4}_msc_man.nii"
+sed -i "s+$search+$replace+" $file
+
+search='ptreshhold_tag'
+replace="0.05"
+sed -i "s+$search+$replace+" $file
+
+search='run1_tag'
+replace="$DIR/02_run1/lvl1.feat"
+sed -i "s+$search+$replace+" $file
+
+search='run2_tag'
+replace="$DIR/03_run2/lvl1.feat"
+sed -i "s+$search+$replace+" $file
+
+feat $file

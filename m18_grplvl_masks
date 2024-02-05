@@ -1,0 +1,60 @@
+#!/bin/bash
+
+DIR=$1
+
+DIR_grp=$DIR/grplvl_mask
+
+DIR_crop=$DIR_grp/crop
+rm -rf $DIR_crop
+mkdir -p $DIR_crop
+
+
+subjectall=( \
+  $DIR_grp/PAM50_cord.nii.gz \
+  # $DIR_grp/PAM50_cord_area_LD.nii.gz \
+  # $DIR_grp/PAM50_cord_area_LV.nii.gz \
+  # $DIR_grp/PAM50_cord_area_RD.nii.gz \
+  # $DIR_grp/PAM50_cord_area_RV.nii.gz \
+  # $DIR_grp/PAM50_cord_hemi_D.nii.gz \
+  # $DIR_grp/PAM50_cord_hemi_L.nii.gz \
+  # $DIR_grp/PAM50_cord_hemi_R.nii.gz \
+  # $DIR_grp/PAM50_cord_hemi_V.nii.gz \
+  # $DIR_grp/PAM50_cord_neuro_L1.nii.gz \
+  $DIR_grp/PAM50_cord_neuro_L2.nii.gz \
+  $DIR_grp/PAM50_cord_neuro_L3.nii.gz \
+  $DIR_grp/PAM50_cord_neuro_L4.nii.gz \
+  $DIR_grp/PAM50_cord_neuro_L5.nii.gz \
+  $DIR_grp/PAM50_cord_neuro_S1.nii.gz \
+  $DIR_grp/PAM50_cord_neuro_S2.nii.gz \
+  $DIR_grp/PAM50_cord_neuro_S3.nii.gz \
+  $DIR_grp/PAM50_cord_neuro_S4.nii.gz \
+  # $DIR_grp/PAM50_cord_neuro_S5.nii.gz \
+  $DIR_grp/PAM50_cord_region_LD_L3-S3.nii.gz \
+  $DIR_grp/PAM50_cord_region_LV_L3-S3.nii.gz \
+  $DIR_grp/PAM50_cord_region_LV-MV_L3-S3.nii.gz
+  $DIR_grp/PAM50_cord_region_MV_L3-S3.nii.gz \
+  $DIR_grp/PAM50_cord_region_RD_L3-S3.nii.gz \
+  $DIR_grp/PAM50_cord_region_RV_L3-S3.nii.gz \
+  $DIR_grp/PAM50_cord_region_RV-MV_L3-S3.nii.gz \
+  $DIR_grp/PAM50_cord_region_SC_L3-S3.nii.gz \
+  )
+
+
+for i in ${!subjectall[@]}; do
+  workfile=${subjectall[$i]}
+  workname=$(basename $workfile)
+
+  echo $DIR_crop/${workname:0:10}_cr${workname:10}
+
+  sct_crop_image \
+    -i $workfile \
+    -xmin 55 -ymin 55 -zmin 50 \
+    -xmax 85 -ymax 85 -zmax 231 \
+    -o $DIR_crop/${workname:0:10}_cr${workname:10:-3}
+
+  # sct_image \
+  #   -i $DIR_crop/PAM50_cord_cr.nii.gz \
+  #   -o $DIR_crop/${workname:0:10}_cr${workname:10:-3} \
+  #   -type uint8
+
+done

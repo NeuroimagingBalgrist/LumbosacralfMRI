@@ -1,0 +1,83 @@
+#!/bin/bash
+
+subject=$1
+
+
+mkdir -p $subject/anat/megre3d_psnorm
+mkdir -p $subject/anat/derivatives
+mkdir -p $subject/func
+
+
+#megre3d into anat renaming
+dicom_megre=("24" "27" "30" "33" "36" "39")
+# dicom_megre=("25" "28" "31" "34" "37" "40") #for changes from standard protocoll
+
+for i in {1..6}
+do
+  for k in {1..5}
+  do
+    cp $subject/nifti/${dicom_megre[(($i-1))]}_megre3d_e$k.nii \
+    $subject/anat/megre3d_psnorm/megre3d_5echoes_meas-${i}_echo-$k.nii
+  done
+done
+
+
+#epi into func with renaming
+array=()
+while IFS=  read -r -d $'\0'; do
+    array+=("$REPLY")
+done < <(find $subject/nifti/ -name "*ovs_pf68*" -print0)
+IFS=$'\n' sorted=($(sort -n <<<"${array[*]}"))
+unset IFS
+
+dir=$(dirname $(dirname ${sorted[0]}))
+name=$(basename ${sorted[0]})
+
+cp ${sorted[0]} $dir/func/${name:11:-6}rs.nii
+cp ${sorted[1]} $dir/func/${name:11:-6}run1.nii
+cp ${sorted[2]} $dir/func/${name:11:-6}run2.nii
+
+
+array=()
+while IFS=  read -r -d $'\0'; do
+    array+=("$REPLY")
+done < <(find $subject/nifti/ -name "*zoomit_pf68*" -print0)
+IFS=$'\n' sorted=($(sort -n <<<"${array[*]}"))
+unset IFS
+
+dir=$(dirname $(dirname ${sorted[0]}))
+name=$(basename ${sorted[0]})
+
+cp ${sorted[0]} $dir/func/${name:11:-6}rs.nii
+cp ${sorted[1]} $dir/func/${name:11:-6}run1.nii
+cp ${sorted[2]} $dir/func/${name:11:-6}run2.nii
+
+
+array=()
+while IFS=  read -r -d $'\0'; do
+    array+=("$REPLY")
+done < <(find $subject/nifti/ -name "*zoomit_pf78*" -print0)
+IFS=$'\n' sorted=($(sort -n <<<"${array[*]}"))
+unset IFS
+
+dir=$(dirname $(dirname ${sorted[0]}))
+name=$(basename ${sorted[0]})
+
+cp ${sorted[0]} $dir/func/${name:11:-6}rs.nii
+cp ${sorted[1]} $dir/func/${name:11:-6}run1.nii
+cp ${sorted[2]} $dir/func/${name:11:-6}run2.nii
+
+
+array=()
+while IFS=  read -r -d $'\0'; do
+    array+=("$REPLY")
+done < <(find $subject/nifti/ -name "*zoomit_pfno*" -print0)
+IFS=$'\n' sorted=($(sort -n <<<"${array[*]}"))
+unset IFS
+
+dir=$(dirname $(dirname ${sorted[0]}))
+name=$(basename ${sorted[0]})
+
+cp ${sorted[0]} $dir/func/${name:11:-6}rs.nii
+cp ${sorted[1]} $dir/func/${name:11:-6}run1.nii
+cp ${sorted[2]} $dir/func/${name:11:-6}run2.nii

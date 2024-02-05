@@ -1,0 +1,50 @@
+#!/bin/bash
+
+input=${1::-4}_mc.nii
+anat=$2
+
+inputa=$anat
+inputam=${anat::-4}_msc_man.nii
+inputf=${input::-4}_mean.nii
+inputfm=${input::-4}_msc_man.nii
+
+DIR=$(dirname $inputf)
+reganat=$DIR/reg_anat
+
+mkdir -p $reganat
+
+sct_register_multimodal \
+	-i $inputf \
+	-d $inputa \
+	-iseg $inputfm \
+	-dseg $inputam \
+	-param step=1,type=seg,algo=centermass,metric=MeanSquares,slicewise=1,smooth=3:step=2,type=seg,algo=bsplinesyn,metric=MeanSquares,slicewise=1,iter=10 \
+	-x spline \
+	-ofolder $reganat \
+	-owarp $reganat/warp_epi2megre.nii.gz \
+  -owarpinv $reganat/warp_megre2epi.nii.gz
+
+gzip -f $reganat/*.nii
+
+featreg=$DIR/lvl1.feat/reg
+
+mkdir -p $featreg
+
+cp $inputa $featreg/standard.nii
+gzip -f $featreg/standard.nii
+
+sct_image \
+	-i $reganat/warp_epi2megre.nii.gz \
+	-to-fsl $inputf $inputa \
+	-o $reganat/warp_epi2megre_fsl.nii.gz
+
+sct_image \
+	-i $reganat/warp_megre2epi.nii.gz \
+	-to-fsl $inputf $inputa \
+	-o $reganat/warp_megre2epi_fsl.nii.gz
+
+cp $reganat/warp_epi2megre_fsl.nii.gz $featreg/example_func2standard.nii.gz
+cp $reganat/warp_megre2epi_fsl.nii.gz $featreg/standard2example_func.nii.gz
+
+
+cp m12_reg/*.mat $featreg

@@ -1,0 +1,93 @@
+#!/bin/bash
+
+subject=$1
+
+directory=$(dirname $subject)
+mask_pam50=$directory/grplvl_mask/PAM50_cord_region_RV-MV_L2-S1.nii.gz
+
+
+# Backtransform from PAM50 to subject megre
+warp_pam50_2_megre=$subject/anat/derivatives/reg_temp/warp_template2anat.nii.gz
+megre=$subject/anat/derivatives/megre3d_cr.nii
+mask_megre=${megre::-4}_mrv.nii
+
+sct_apply_transfo \
+  -i $mask_pam50 \
+  -d $megre \
+  -w $warp_pam50_2_megre \
+  -x nn \
+  -o $mask_megre
+
+# Backtransform from subject megre to run epi
+warp_megre_2_epi_all=( \
+  $subject/func/derivatives/ovs_pf68/02_run1/reg_anat/warp_megre2epi.nii.gz \
+  $subject/func/derivatives/ovs_pf68/03_run2/reg_anat/warp_megre2epi.nii.gz \
+  $subject/func/derivatives/zoomit_pf68/02_run1/reg_anat/warp_megre2epi.nii.gz \
+  $subject/func/derivatives/zoomit_pf68/03_run2/reg_anat/warp_megre2epi.nii.gz \
+  $subject/func/derivatives/zoomit_pf78/02_run1/reg_anat/warp_megre2epi.nii.gz \
+  $subject/func/derivatives/zoomit_pf78/03_run2/reg_anat/warp_megre2epi.nii.gz \
+  $subject/func/derivatives/zoomit_pfno/02_run1/reg_anat/warp_megre2epi.nii.gz \
+  $subject/func/derivatives/zoomit_pfno/03_run2/reg_anat/warp_megre2epi.nii.gz \
+  )
+
+epi_all=( \
+  $subject/func/derivatives/ovs_pf68/02_run1/ovs_pf68_run1_cr_mc_mean.nii \
+  $subject/func/derivatives/ovs_pf68/03_run2/ovs_pf68_run2_cr_mc_mean.nii \
+  $subject/func/derivatives/zoomit_pf68/02_run1/zoomit_pf68_run1_cr_mc_mean.nii \
+  $subject/func/derivatives/zoomit_pf68/03_run2/zoomit_pf68_run2_cr_mc_mean.nii \
+  $subject/func/derivatives/zoomit_pf78/02_run1/zoomit_pf78_run1_cr_mc_mean.nii \
+  $subject/func/derivatives/zoomit_pf78/03_run2/zoomit_pf78_run2_cr_mc_mean.nii \
+  $subject/func/derivatives/zoomit_pfno/02_run1/zoomit_pfno_run1_cr_mc_mean.nii \
+  $subject/func/derivatives/zoomit_pfno/03_run2/zoomit_pfno_run2_cr_mc_mean.nii \
+  )
+
+for i in ${!epi_all[@]}; do
+  warp_megre_2_epi=${warp_megre_2_epi_all[$i]}
+  epi=${epi_all[$i]}
+  mask_epi=${epi::-9}_mrv.nii
+
+  sct_apply_transfo \
+    -i $mask_megre \
+    -d $epi \
+    -w $warp_megre_2_epi \
+    -x nn \
+    -o $mask_epi
+
+done
+
+
+# Copy relevant files to effect_size folder
+seq_all=( \
+  $subject/func/derivatives/ovs_pf68/02_run1 \
+  $subject/func/derivatives/ovs_pf68/03_run2 \
+  $subject/func/derivatives/zoomit_pf68/02_run1 \
+  $subject/func/derivatives/zoomit_pf68/03_run2 \
+  $subject/func/derivatives/zoomit_pf78/02_run1 \
+  $subject/func/derivatives/zoomit_pf78/03_run2 \
+  $subject/func/derivatives/zoomit_pfno/02_run1 \
+  $subject/func/derivatives/zoomit_pfno/03_run2 \
+  )
+
+for i in ${!seq_all[@]}; do
+  DIR_run=${seq_all[$i]}
+  rm -rf $DIR_run/effect_size
+  mkdir -p $DIR_run/effect_size
+
+
+  gzip -dfk $DIR_run/lvl1.feat/stats/pe1.nii.gz
+  mv $DIR_run/lvl1.feat/stats/pe1.nii $DIR_run/effect_size
+
+  cp $DIR_run/lvl1.feat/design.mat $DIR_run/effect_size
+
+  cp $DIR_run/*_cr_mc_mrv.nii $DIR_run/effect_size/mask_rv.nii
+
+  gzip -dfk $DIR_run/lvl1.feat/mean_func.nii.gz
+  mv $DIR_run/lvl1.feat/mean_func.nii $DIR_run/effect_size
+
+  gzip -dfk $DIR_run/lvl1.feat/stats/res4d.nii.gz
+  mv $DIR_run/lvl1.feat/stats/res4d.nii $DIR_run/effect_size
+
+  # gzip -dfk $DIR_run/lvl1.feat/confoundEV*.nii.gz
+  # mv $DIR_run/lvl1.feat/confoundEV*.nii $DIR_run/effect_size
+
+done

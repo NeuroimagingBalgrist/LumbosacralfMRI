@@ -1,0 +1,46 @@
+#!/bin/bash
+
+input=${1::-4}_mc.nii
+
+mask=${input::-4}_msc_man.nii
+
+DIR_input=$(dirname $input)
+DIR_temp=$DIR_input/temp
+NAME_input=$(basename $input)
+
+
+mkdir -p $DIR_temp
+
+cp $input $DIR_temp/epi.nii
+
+sct_image \
+  -i $DIR_temp/epi.nii \
+  -split t
+
+files=$(find $DIR_temp/epi_T*.nii -type f | wc -l)
+
+echo "Smoothing ..."
+
+for (( i=1; i<=$files; i++ ))
+do
+  printf -v epi "$DIR_temp/epi_T%0*d.nii" 4 $(($i-1))
+  printf -v epi_sm "$DIR_temp/epi_sm_T%0*d.nii" 4 $(($i-1))
+  3dBlurInMask \
+    -input $epi \
+    -mask $mask \
+    -preserve -FWHMxyz 1 1 5 -overwrite \
+    -prefix $epi_sm \
+    -DAFNI_NIFTI_TYPE_WARN="NO" -DAFNI_NO_OBLIQUE_WARNING="YES" -quiet &> /dev/null
+done
+
+sct_image \
+  -i $DIR_temp/epi_sm_T*.nii \
+  -concat t \
+  -o $DIR_temp/epi_sm.nii
+
+sct_image \
+  -i $input \
+  -copy-header $DIR_temp/epi_sm.nii\
+  -o ${input::-4}_sm.nii
+
+rm -r $DIR_temp

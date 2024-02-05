@@ -1,0 +1,173 @@
+#!/bin/bash
+
+input=${1::-4}_mc.nii
+
+DIR=$(dirname $(dirname $(dirname $input)))
+DIR_seq=$(dirname $(dirname $input))
+NAME=$(basename $input)
+
+segment=$DIR/segment_jim
+regrun=$DIR_seq/reg_run
+
+# mkdir -p $regrun
+#
+# cp $segment/${NAME::-4}_mean.nii $regrun
+# cp $segment/${NAME::-4}_msc_jim.nii $regrun
+# cp $segment/${NAME::-4}_mcsf_jim.nii $regrun
+#
+# # MASK CS
+# sct_maths \
+#   -i $regrun/${NAME::-4}_msc_jim.nii \
+#   -bin 0.1 \
+#   -o $regrun/${NAME::-4}_msc_jim_bin.nii
+#
+# sct_image \
+#   -i ${input::-4}_mean.nii \
+#   -copy-header $regrun/${NAME::-4}_msc_jim_bin.nii \
+#   -o $regrun/${NAME::-4}_msc_man.nii
+#
+# # MASK CSF
+# sct_maths \
+#   -i $regrun/${NAME::-4}_mcsf_jim.nii \
+#   -bin 0.1 \
+#   -o $regrun/${NAME::-4}_mcsf_jim_bin.nii
+#
+# sct_image \
+#   -i ${input::-4}_mean.nii \
+#   -copy-header $regrun/${NAME::-4}_mcsf_jim_bin.nii \
+#   -o $regrun/${NAME::-4}_mcsf_man.nii
+
+
+mean1=$DIR_seq/01_rest/${NAME::-15}_rs_cr_mc_mean.nii
+mean2=$DIR_seq/02_run1/${NAME::-15}_run1_cr_mc_mean.nii
+mean3=$DIR_seq/03_run2/${NAME::-15}_run2_cr_mc_mean.nii
+
+mask1sc=$DIR_seq/01_rest/${NAME::-15}_rs_cr_mc_msc_man.nii
+mask2sc=$DIR_seq/02_run1/${NAME::-15}_run1_cr_mc_msc_man.nii
+mask3sc=$DIR_seq/03_run2/${NAME::-15}_run2_cr_mc_msc_man.nii
+
+mask1csf=$DIR_seq/01_rest/${NAME::-15}_rs_cr_mc_mcsf_man.nii
+mask2csf=$DIR_seq/02_run1/${NAME::-15}_run1_cr_mc_mcsf_man.nii
+mask3csf=$DIR_seq/03_run2/${NAME::-15}_run2_cr_mc_mcsf_man.nii
+
+# mask1sc_new=$DIR_seq/01_rest/${NAME::-15}_rs_cr_mc_mean_mask-sc.nii
+# mask2sc_new=$DIR_seq/02_run1/${NAME::-15}_run1_cr_mc_msc_man_new.nii
+# mask3sc_new=$DIR_seq/03_run2/${NAME::-15}_run2_cr_mc_mean_mask-sc.nii
+# mask1sc_old=$DIR_seq/01_rest/${NAME::-15}_rs_cr_mc_msc_man_old.nii
+# mask2sc_old=$DIR_seq/02_run1/${NAME::-15}_run1_cr_mc_msc_man_old.nii
+# mask3sc_old=$DIR_seq/03_run2/${NAME::-15}_run2_cr_mc_msc_man_old.nii
+# mv $mask1sc $mask1sc_old
+# mv $mask2sc $mask2sc_new
+# mv $mask3sc $mask3sc_old
+# mv $mask1sc_new $mask1sc
+# mv $mask2sc_old $mask2sc
+# mv $mask3sc_new $mask3sc
+
+
+# Correct the CSF mask by making sure no SC plus 2 voxel dilation is included.
+sct_maths \
+  -i $mask1sc \
+  -dilate 2 -shape disk -dim 2 \
+  -o ${mask1sc::-4}_dil.nii
+sct_maths \
+  -i ${mask1sc::-4}_dil.nii \
+  -mul $mask1csf \
+  -o ${mask1sc::-4}_dilxmcsf.nii
+sct_maths \
+  -i $mask1csf \
+  -sub ${mask1sc::-4}_dilxmcsf.nii \
+  -o ${mask1csf::-8}_cor.nii \
+  -type uint8
+rm ${mask1sc::-4}_dil*
+
+sct_maths \
+  -i $mask2sc \
+  -dilate 2 -shape disk -dim 2 \
+  -o ${mask2sc::-4}_dil.nii
+sct_maths \
+  -i ${mask2sc::-4}_dil.nii \
+  -mul $mask2csf \
+  -o ${mask2sc::-4}_dilxmcsf.nii
+sct_maths \
+  -i $mask2csf \
+  -sub ${mask2sc::-4}_dilxmcsf.nii \
+  -o ${mask2csf::-8}_cor.nii \
+  -type uint8
+rm ${mask2sc::-4}_dil*
+
+sct_maths \
+  -i $mask3sc \
+  -dilate 2 -shape disk -dim 2 \
+  -o ${mask3sc::-4}_dil.nii
+sct_maths \
+  -i ${mask3sc::-4}_dil.nii \
+  -mul $mask3csf \
+  -o ${mask3sc::-4}_dilxmcsf.nii
+sct_maths \
+  -i $mask3csf \
+  -sub ${mask3sc::-4}_dilxmcsf.nii \
+  -o ${mask3csf::-8}_cor.nii \
+  -type uint8
+rm ${mask3sc::-4}_dil*
+
+
+# Calculate the tSNR for the resting state scan.
+
+rs_mc=$DIR_seq/01_rest/${NAME::-15}_rs_cr_mc.nii
+DIR_rs=$(dirname $rs_mc)
+
+
+matlab -nodisplay -r "m07_segmentation_II_detrend('"$rs_mc"', '"$DIR_rs"/temp_detrend.nii'); quit"
+echo Detrend Done!
+
+# === Compute tSNR
+sct_fmri_compute_tsnr -i $DIR_rs/temp_detrend.nii \
+  -o ${rs_mc::-4}_tsnr.nii
+
+
+# === Overlay _tSNR with _msc
+sct_maths -i ${rs_mc::-4}_tsnr.nii \
+  -mul ${rs_mc::-4}_msc_man.nii \
+  -o $DIR_rs/temp_detrend_tsnr_msc.nii
+
+matlab -nodisplay -r "m07_segmentation_IIfunc_tsnrslice('"$DIR_rs/temp_detrend_tsnr_msc.nii"', '"${rs_mc::-4}_tsnr_slice.txt"'); quit"
+
+
+# === Calculate Mean tSNR from _detrend_msc
+fslstats $DIR_rs/temp_detrend_tsnr_msc.nii \
+  -n -M > ${rs_mc::-4}_tsnr.txt
+
+
+# === Overlay _tSNR with _msc eroded by 1
+sct_maths \
+  -i ${rs_mc::-4}_msc_man.nii \
+  -erode 1 -shape disk -dim 2 \
+  -o ${rs_mc::-4}_msc_man_ero1.nii
+
+sct_maths -i ${rs_mc::-4}_tsnr.nii \
+  -mul ${rs_mc::-4}_msc_man_ero1.nii \
+  -o $DIR_rs/temp_detrend_tsnr_msc_ero1.nii
+
+matlab -nodisplay -r "m07_segmentation_IIfunc_tsnrslice('"$DIR_rs/temp_detrend_tsnr_msc_ero1.nii"', '"${rs_mc::-4}_tsnr_slice_ero1.txt"'); quit"
+
+
+# === Calculate Mean tSNR from _detrend_msc_ero1
+fslstats $DIR_rs/temp_detrend_tsnr_msc_ero1.nii \
+  -n -M > ${rs_mc::-4}_tsnr_ero1.txt
+
+
+rm $DIR_rs/temp*
+
+
+# === Copy tSNR files to a centralized folder for easy analysis
+directory=$(dirname $(dirname $(dirname $DIR)))
+subject=$(basename $(dirname $(dirname $DIR)))
+
+DIR_tsnr=$directory/sublvl_tsnr
+mkdir -p $DIR_tsnr
+rm $DIR_tsnr/${subject}_${NAME::-15}*
+
+cp ${rs_mc::-4}_tsnr_slice.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr_slice.txt
+cp ${rs_mc::-4}_tsnr.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr.txt
+cp ${rs_mc::-4}_tsnr_slice_ero1.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr_slice_ero1.txt
+cp ${rs_mc::-4}_tsnr_ero1.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr_ero1.txt

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+input=${1::-4}_mc.nii
+
+DIR=$(dirname $input)
+
+mkdir $DIR/temp
+
+cd $(dirname $0)
+matlab -nodisplay -r "m10_smooth('"$input"'); quit"
+
+mv $DIR/temp/4D.nii \
+  ${input::-4}_sm.nii
+
+rm -r $DIR/temp

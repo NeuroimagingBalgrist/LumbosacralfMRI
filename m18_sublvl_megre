@@ -1,0 +1,67 @@
+#!/bin/bash
+
+
+DIR=$1
+
+DIR_sublvl_megre=$DIR/sublvl_megre
+
+subjectall=( \
+  sub-01 \
+  sub-02 \
+  sub-03 \
+  sub-03n \
+  sub-04 \
+  sub-05 \
+  sub-06 \
+  sub-06n \
+  sub-07 \
+  sub-08 \
+  sub-09 \
+  sub-10 \
+  sub-11 \
+  sub-12 \
+  sub-13n \
+  )
+
+sequenceall=( \
+  ovs_pf68 \
+  zoomit_pf68 \
+  zoomit_pf78 \
+  zoomit_pfno \
+  )
+
+for i in ${!subjectall[@]}; do
+
+subject=${subjectall[$i]}
+echo -e "\033[7;109m $subject \033[0m"
+
+megre=$DIR/${subject}/anat/derivatives/megre3d_cr.nii
+mask=$DIR/${subject}/anat/derivatives/megre3d_cr_msc_man.nii
+
+sct_crop_image \
+  -i $megre \
+  -xmin 15 -xmax 82 \
+  -ymin 15 -ymax 82 \
+  -o $DIR_sublvl_megre/${subject}_megre_cr.nii.gz
+
+for m in ${!sequenceall[@]}; do
+
+  sequence=${sequenceall[$m]}
+  echo -e "\033[7;109m $sequence \033[0m"
+
+  stat_ovs=$DIR/${subject}/func/derivatives/${sequence}/lvl2.gfeat/cope1.feat/stats/zstat1.nii.gz
+
+  sct_maths \
+    -i $stat_ovs \
+    -mul $mask\
+    -o $DIR_sublvl_megre/temp.nii.gz
+
+  sct_crop_image \
+    -i $DIR_sublvl_megre/temp.nii.gz \
+    -xmin 15 -xmax 82 \
+    -ymin 15 -ymax 82 \
+    -o $DIR_sublvl_megre/${subject}_${sequence}_zstat1_cr_mask.nii.gz
+
+  rm $DIR_sublvl_megre/temp.nii.gz
+  done
+done

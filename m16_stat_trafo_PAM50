@@ -1,0 +1,73 @@
+#!/bin/bash
+
+run=$1
+anat=$2
+
+DIR_subject=$(dirname $(dirname $run))
+DIR_gfeat=$DIR_subject/lvl2.gfeat
+
+DIR_tempfeat=$DIR_subject/lvl2template.feat
+rm -rf $DIR_tempfeat
+cp -R $DIR_gfeat/cope1.feat $DIR_tempfeat
+
+temp=$SCT_DIR/data/PAM50/template/PAM50_t2.nii.gz
+warp=$(dirname $anat)/reg_temp/warp_anat2template.nii.gz
+
+
+DIR_cope=$DIR_gfeat/cope1.feat
+mean_func=$DIR_cope/mean_func.nii.gz
+example_func=$DIR_cope/example_func.nii.gz
+mask=${anat::-4}_msc_man.nii
+
+sct_apply_transfo \
+  -i $mean_func \
+  -d $temp \
+  -w $warp \
+  -o $DIR_tempfeat/mean_func.nii.gz
+
+sct_apply_transfo \
+  -i $example_func \
+  -d $temp \
+  -w $warp \
+  -o $DIR_tempfeat/example_func.nii.gz
+
+cp $SCT_DIR/data/PAM50/template/PAM50_cord.nii.gz $DIR_tempfeat/mask.nii.gz
+
+mkdir $DIR_tempfeat/reg
+
+cp m12_reg/*.mat $DIR_tempfeat/reg
+cp $DIR_tempfeat/mean_func.nii.gz $DIR_tempfeat/reg/standard.nii.gz
+
+
+DIR_stats=$DIR_cope/stats
+cope=$DIR_stats/cope1.nii.gz
+varcope=$DIR_stats/varcope1.nii.gz
+zstat=$DIR_stats/zstat1.nii.gz
+tdof=$DIR_stats/tdof_t1.nii.gz
+
+sct_apply_transfo \
+  -i $cope \
+  -d $temp \
+  -w $warp \
+  -o $DIR_tempfeat/stats/cope1.nii.gz
+
+sct_apply_transfo \
+  -i $varcope \
+  -d $temp \
+  -w $warp \
+  -o $DIR_tempfeat/stats/varcope1.nii.gz
+
+sct_apply_transfo \
+  -i $zstat \
+  -d $temp \
+  -w $warp \
+  -o $DIR_tempfeat/stats/zstat1.nii.gz
+
+sct_apply_transfo \
+  -i $tdof \
+  -d $temp \
+  -w $warp \
+  -o $DIR_tempfeat/stats/tdof_t1.nii.gz
+
+
+updatefeatreg $DIR_tempfeat -gifs

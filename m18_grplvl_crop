@@ -1,0 +1,46 @@
+#!/bin/bash
+
+DIR=$1
+
+DIR_grp=$DIR/grplvl_rando
+
+DIR_grp_results=$DIR_grp/00_results
+rm -rf $DIR_grp_results
+mkdir -p $DIR_grp_results
+
+sequenceall=( \
+    ovs_pf68 \
+    zoomit_pf68 \
+    zoomit_pf78 \
+    zoomit_pfno )
+
+for i in ${!sequenceall[@]}; do
+  sequence=${sequenceall[$i]}
+
+  sct_crop_image \
+    -i $DIR_grp/${sequence}_tstat1.nii.gz \
+    -xmin 55 -xmax 85 \
+    -ymin 55 -ymax 85 \
+    -o $DIR_grp_results/${sequence}_tstat1_cr.nii
+
+  sct_crop_image \
+    -i $DIR_grp/${sequence}_tfce_corrp_tstat1.nii.gz \
+    -xmin 55 -xmax 85 \
+    -ymin 55 -ymax 85 \
+    -o $DIR_grp_results/${sequence}_tfce_corrp_tstat1_cr.nii
+
+done
+
+sct_crop_image \
+  -i $SCT_DIR/data/PAM50/template/PAM50_cord.nii.gz \
+  -xmin 55 -xmax 85 \
+  -ymin 55 -ymax 85 \
+  -zmin 50 -zmax 231 \
+  -o $DIR_grp_results/PAM50_cord_cr.nii
+
+sct_crop_image \
+  -i $SCT_DIR/data/PAM50/template/PAM50_t2.nii.gz \
+  -xmin 55 -xmax 85 \
+  -ymin 55 -ymax 85 \
+  -zmin 50 -zmax 231 \
+  -o $DIR_grp_results/PAM50_t2_cr.nii
