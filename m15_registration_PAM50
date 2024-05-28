@@ -2,8 +2,10 @@
 
 anat=$1
 
-txtfile_csa=$(dirname $(dirname $(dirname $anat)))/func/derivatives/segment_jim/megre3d_cr.txt
-txtfile_tip=$(dirname $(dirname $(dirname $anat)))/func/derivatives/segment_jim/megre3d_cr_tip.txt
+DIR_funcder=$(dirname $(dirname $(dirname $anat)))/func/derivatives
+
+txtfile_csa=$DIR_funcder/segment_jim/megre3d_cr.txt
+txtfile_tip=$DIR_funcder/segment_jim/megre3d_cr_tip.txt
 output=$(dirname $anat)/reg_temp
 label=$output/$(basename ${anat::-4})_label.nii
 
@@ -14,23 +16,88 @@ mkdir -p $output
 matlab -nodisplay -r "m15_registration_PAM50('"$anat"', '"$txtfile_csa"'); quit"
 
 # Fix weird values (probably a problem with spm_write_vol, doesnt seem to be necessary with newer images)
-sct_maths -i $label -bin 18 -o $label
-sct_maths -i $label -mul 19 -o $label
+sct_maths -i $label -bin 58 -o $label
+sct_maths -i $label -mul 59 -o $label
 
 # Add tip label (conus medullaris, ID 21) from segmentation textfile
 tip_slice=$(<$txtfile_tip)
 sct_label_utils \
   -i $label \
-  -create-add 48,48,$tip_slice,21 \
+  -create-add 48,48,$tip_slice,60 \
   -o $label
+
+
+# Create temporary LSE-label in PAM50 acording to Frostell (approx T12 vertrebra body)
+pam50_label_disc=$SCT_DIR/data/PAM50/template/PAM50_label_disc.nii.gz
+sct_label_utils \
+  -i $pam50_label_disc \
+  -create-add 70,70,143,59 \
+  -o $pam50_label_disc
 
 # Regist to PAM50 template (must use -ldisc argument!)
 sct_register_to_template \
   -i $anat \
-	-s ${anat::-4}_msc_man.nii \
+	-s ${anat::-4}_msc_man_original.nii \
 	-ldisc $label \
 	-c t2 \
-	-ref template \
+	-ref subject \
 	-ofolder $output
 
-rm straightening.cache
+# Remove temporary LSE-label in PAM50
+sct_label_utils \
+  -i $pam50_label_disc \
+  -create-add 70,70,143,0 \
+  -o $pam50_label_disc
+
+
+
+pam50=$SCT_DIR/data/PAM50/template/PAM50_t2.nii.gz
+warp=$output/warp_anat2template.nii.gz
+
+sct_apply_transfo \
+ -i $DIR_funcder/ovs_pf68/02_run1/reg_anat/ovs_pf68_run1_cr_mc_mean_reg.nii.gz \
+ -d $pam50 \
+ -w $warp \
+ -o $output/ovs_pf68_run12template.nii
+
+sct_apply_transfo \
+ -i $DIR_funcder/zoomit_pf68/02_run1/reg_anat/zoomit_pf68_run1_cr_mc_mean_reg.nii.gz \
+ -d $pam50 \
+ -w $warp \
+ -o $output/zoomit_pf68_run12template.nii
+
+sct_apply_transfo \
+ -i $DIR_funcder/zoomit_pf78/02_run1/reg_anat/zoomit_pf78_run1_cr_mc_mean_reg.nii.gz \
+ -d $pam50 \
+ -w $warp \
+ -o $output/zoomit_pf78_run12template.nii
+
+ sct_apply_transfo \
+  -i $DIR_funcder/zoomit_pfno/02_run1/reg_anat/zoomit_pfno_run1_cr_mc_mean_reg.nii.gz \
+  -d $pam50 \
+  -w $warp \
+  -o $output/zoomit_pfno_run12template.nii
+
+sct_apply_transfo \
+ -i $DIR_funcder/ovs_pf68/01_rest/reg_anat/tsnr2anat.nii.gz \
+ -d $pam50 \
+ -w $warp \
+ -o $output/ovs_pf68_tsnr2template.nii
+
+sct_apply_transfo \
+ -i $DIR_funcder/zoomit_pf68/01_rest/reg_anat/tsnr2anat.nii.gz \
+ -d $pam50 \
+ -w $warp \
+ -o $output/zoomit_pf68_tsnr2template.nii
+
+sct_apply_transfo \
+ -i $DIR_funcder/zoomit_pf78/01_rest/reg_anat/tsnr2anat.nii.gz \
+ -d $pam50 \
+ -w $warp \
+ -o $output/zoomit_pf78_tsnr2template.nii
+
+ sct_apply_transfo \
+  -i $DIR_funcder/zoomit_pfno/01_rest/reg_anat/tsnr2anat.nii.gz \
+  -d $pam50 \
+  -w $warp \
+  -o $output/zoomit_pfno_tsnr2template.nii

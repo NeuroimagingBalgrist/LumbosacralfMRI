@@ -1,28 +1,32 @@
 #!/bin/bash
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
+# The scripts in this pipeline are documented in the 00_Documentation folder.
+# There are also quidelines and notes listed to help with running the full analyis.
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 directory=*
 
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
+processing=$directory/03_Processing
+results=$directory/04_Results
 
 subjectall=( \
-  $directory/sub-01 \
-  $directory/sub-02 \
-  $directory/sub-03 \
-  $directory/sub-03n \
-  $directory/sub-04 \
-  $directory/sub-05 \
-  $directory/sub-06 \
-  $directory/sub-06n \
-  $directory/sub-07 \
-  $directory/sub-08 \
-  $directory/sub-09 \
-  $directory/sub-10 \
-  $directory/sub-11 \
-  $directory/sub-12 \
-  $directory/sub-13n \
+  $processing/sub-01 \
+  $processing/sub-02 \
+  $processing/sub-03 \
+  $processing/sub-03n \
+  $processing/sub-04 \
+  $processing/sub-05 \
+  $processing/sub-06 \
+  $processing/sub-06n \
+  $processing/sub-07 \
+  $processing/sub-08 \
+  $processing/sub-09 \
+  $processing/sub-10 \
+  $processing/sub-11 \
+  $processing/sub-12 \
+  $processing/sub-13n \
   )
 
 #-------------------------------------------------------------------------------
@@ -112,6 +116,19 @@ bash m06_motioncorrection $czitno_rs
 bash m06_motioncorrection $czitno_run1
 bash m06_motioncorrection $czitno_run2
 
+bash m06.2_motioncorrection_test $covs68_rs
+bash m06.2_motioncorrection_test $covs68_run1
+bash m06.2_motioncorrection_test $covs68_run2
+bash m06.2_motioncorrection_test $czit68_rs
+bash m06.2_motioncorrection_test $czit68_run1
+bash m06.2_motioncorrection_test $czit68_run2
+bash m06.2_motioncorrection_test $czit78_rs
+bash m06.2_motioncorrection_test $czit78_run1
+bash m06.2_motioncorrection_test $czit78_run2
+bash m06.2_motioncorrection_test $czitno_rs
+bash m06.2_motioncorrection_test $czitno_run1
+bash m06.2_motioncorrection_test $czitno_run2
+
 #--------------------------------------------------------------------------------------------------------------------------------
 echo -e "\033[7;109m ==================== 07 Segmentation ==================== \033[0m"
 echo -e "\033[7;109m ===== 07 Segmentation I ===== \033[0m"
@@ -184,6 +201,11 @@ bash m12_registration $czit78_run2 $anat
 bash m12_registration $czitno_run1 $anat
 bash m12_registration $czitno_run2 $anat
 
+bash m12_registration_rest $covs68_rs $anat
+bash m12_registration_rest $czit68_rs $anat
+bash m12_registration_rest $czit78_rs $anat
+bash m12_registration_rest $czitno_rs $anat
+
 #--------------------------------------------------------------------------------------------------------------------------------
 echo -e "\033[7;109m ==================== 13 Stats Transformation ==================== \033[0m"
 bash m13_stat_trafo $covs68_run1 $anat
@@ -217,24 +239,33 @@ bash m16_stat_trafo_PAM50 $czitno_run1 $anat
 echo -e "\033[7;109m ==================== 20 Backtransformation for Right Ventral Mask ==================== \033[0m"
 bash m20_mean_signal $subject
 
-
 #--------------------------------------------------------------------------------------------------------------------------------
 done
 
 #--------------------------------------------------------------------------------------------------------------------------------
 echo -e "\033[7;109m ==================== 17 Randomise ==================== \033[0m"
-bash m17_grplvl_randomise $directory
-bash m17_grplvl_noise $directory
+bash m17_grplvl_randomise $processing
+bash m17_grplvl_randomise_run $directory
+bash m17_grplvl_noise $processing
 
 # --------------------------------------------------------------------------------------------------------------------------------
 echo -e "\033[7;109m ==================== 18 Crop and Update Results ==================== \033[0m"
-bash m18_grplvl_crop $directory
+bash m18_grplvl_crop $results
 
-# # Check Masks in grplvl_mask else run
-# bash m18_grplvl_masks $directory
+# Check Masks in grplvl_mask else run
+bash m90_neuro_segm $results
+bash m18_grplvl_masks $results
 
-# bash m18_sublvl_megre $directory
+# Subject Level Maps
+bash m18_sublvl_megre $processing
 
+# --------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 25 Registration Quality ==================== \033[0m"
+bash m25_registration_quality $directory
+
+# --------------------------------------------------------------------------------------------------------------------------------
+echo -e "\033[7;109m ==================== 26 tSNR Map ==================== \033[0m"
+bash m26_tsnr_map $directory
 
 #--------------------------------------------------------------------------------------------------------------------------------
 runmin=$((SECONDS/60))

@@ -50,6 +50,12 @@ feat $file
 
 
 
+# CONVOLUTION FILE IS SAVED IN A NEW SPOT WITH NEWER FSL VERSIONS. UPDATED FSL
+# WILL STILL HAVE THE OLD LOCATION USED HERE BUT FRESH INSTALLS WILL FAIL
+# LOCATING THE OPTIMAL/CUSTOM BASIS FUNCTION. CHANGE THE PATH IN THE .FSF file
+# TO /home/*user*/fsl/data/feat5/default_flobs.flobs/hrfbasisfns.txt
+# THIS BRAKES ON SOMEONE ELSE MACHINE NOW! CAN FIX WITH OUTPUT OF $FSLDIR
+# VERSION BRAKE 6.0.3.0 -> 6.0.4.0
 
 # Stats get overwriten during registration, make copy to preserve.
 DIRstats=$DIR/lvl1.feat/stats

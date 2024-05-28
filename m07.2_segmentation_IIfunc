@@ -132,6 +132,13 @@ sct_maths -i ${rs_mc::-4}_tsnr.nii \
 
 matlab -nodisplay -r "m07_segmentation_IIfunc_tsnrslice('"$DIR_rs/temp_detrend_tsnr_msc.nii"', '"${rs_mc::-4}_tsnr_slice.txt"'); quit"
 
+# === Overlay _tSNR with _msccsf
+sct_maths -i ${rs_mc::-4}_tsnr.nii \
+  -mul ${rs_mc::-4}_mcsf_cor.nii \
+  -o $DIR_rs/temp_detrend_tsnr_mcsf.nii
+
+matlab -nodisplay -r "m07_segmentation_IIfunc_tsnrslice('"$DIR_rs/temp_detrend_tsnr_mcsf.nii"', '"${rs_mc::-4}_tsnr_csf_slice.txt"'); quit"
+
 
 # === Calculate Mean tSNR from _detrend_msc
 fslstats $DIR_rs/temp_detrend_tsnr_msc.nii \
@@ -160,14 +167,15 @@ rm $DIR_rs/temp*
 
 
 # === Copy tSNR files to a centralized folder for easy analysis
-directory=$(dirname $(dirname $(dirname $DIR)))
+directory=$(dirname $(dirname $(dirname $(dirname $DIR))))
 subject=$(basename $(dirname $(dirname $DIR)))
 
-DIR_tsnr=$directory/sublvl_tsnr
+DIR_tsnr=$directory/04_Results/sublvl_tsnr
 mkdir -p $DIR_tsnr
 rm $DIR_tsnr/${subject}_${NAME::-15}*
 
 cp ${rs_mc::-4}_tsnr_slice.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr_slice.txt
+cp ${rs_mc::-4}_tsnr_csf_slice.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr_csf_slice.txt
 cp ${rs_mc::-4}_tsnr.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr.txt
 cp ${rs_mc::-4}_tsnr_slice_ero1.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr_slice_ero1.txt
 cp ${rs_mc::-4}_tsnr_ero1.txt $DIR_tsnr/${subject}_${NAME::-15}_rs_cr_mc_tsnr_ero1.txt

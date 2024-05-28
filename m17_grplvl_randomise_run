@@ -1,0 +1,123 @@
+#!/bin/bash
+
+DIR=$1
+
+cope_ovs68=/func/derivatives/ovs_pf68/lvl2template.feat/stats/cope1.nii.gz
+cope_zmit68=func/derivatives/zoomit_pf68/lvl2template.feat/stats/cope1.nii.gz
+cope_zmit78=func/derivatives/zoomit_pf78/lvl2template.feat/stats/cope1.nii.gz
+cope_zmitno=func/derivatives/zoomit_pfno/lvl2template.feat/stats/cope1.nii.gz
+
+DIR_grp=$DIR/04_Results/grplvl_rando_run
+mkdir -vp $DIR_grp
+DIR_grp_results=$DIR_grp/00_results
+rm -rf $DIR_grp_results
+mkdir -vp $DIR_grp_results
+
+#--------------------------------------------------------------------------------------------------------------------------------
+
+mask=$DIR_grp/PAM50_cord_cr.nii.gz
+sct_crop_image \
+  -i $SCT_DIR/data/PAM50/template/PAM50_cord.nii.gz  \
+  -xmin 35 -xmax 105 \
+  -ymin 35 -ymax 105 \
+  -zmin 40 -zmax 220 \
+  -o $mask
+
+sct_crop_image \
+  -i $mask \
+  -xmin 20 -xmax 50 \
+  -ymin 20 -ymax 50 \
+  -o $DIR_grp_results/PAM50_cord_cr.nii
+
+#--------------------------------------------------------------------------------------------------------------------------------
+
+run_all=(02_run1 03_run2)
+sequence_all=(ovs_pf68 zoomit_pf68 zoomit_pf78 zoomit_pfno)
+subjectall=(sub-01 sub-02 sub-03 sub-04 sub-05 sub-06 sub-07 sub-08 sub-09 sub-10 sub-11 sub-12)
+
+for a in ${!run_all[@]}; do
+  run=${run_all[$a]}
+
+  for b in ${!sequence_all[@]}; do
+    sequence=${sequence_all[$b]}
+
+    for i in ${!subjectall[@]}; do
+      subject=${subjectall[$i]}
+      echo -e "\033[7;97m $subject ${run:3} \033[0m"
+
+
+      input=${DIR}/03_Processing/${subject}/func/derivatives/${sequence}/${run}/lvl1.feat/stats/cope1.nii.gz
+      desti=$SCT_DIR/data/PAM50/template/PAM50_t2.nii.gz
+      warp1=${DIR}/03_Processing/${subject}/func/derivatives/${sequence}/${run}/reg_anat/warp_epi2megre.nii.gz
+      warp2=${DIR}/03_Processing/${subject}/anat/derivatives/reg_temp/warp_anat2template.nii.gz
+      output=${DIR_grp}/${subject}_${sequence}_${run:3}_cope2template.nii.gz
+
+      sct_apply_transfo \
+        -i $input \
+        -d $desti \
+        -w $warp1 $warp2 \
+        -o $output
+    done
+
+    cope2temp_list=(`ls ${DIR_grp}/sub-*_${sequence}_${run:3}_cope2template.nii.gz`)
+    cope2temp=${DIR_grp}/${sequence}_${run:3}_cope2template_cr.nii.gz
+
+    sct_image \
+      -i ${cope2temp_list[@]} \
+      -concat t \
+      -o $cope2temp
+
+    sct_crop_image \
+      -i $cope2temp \
+      -xmin 35 -xmax 105 \
+      -ymin 35 -ymax 105 \
+      -zmin 40 -zmax 220 \
+      -o $cope2temp
+
+    randomise \
+      -i $cope2temp \
+      -o ${DIR_grp}/${sequence}_${run:3} \
+      -m $mask \
+      -1 -v 5 -T
+
+    rm ${DIR_grp}/sub-*_${sequence}_${run:3}_cope2template.nii.gz
+
+    sct_crop_image \
+      -i ${DIR_grp}/${sequence}_${run:3}_tfce_corrp_tstat1.nii.gz \
+      -xmin 20 -xmax 50 \
+      -ymin 20 -ymax 50 \
+      -o $DIR_grp_results/${sequence}_${run:3}_tfce_corrp_tstat1_cr.nii
+
+    sct_maths \
+      -i $DIR_grp_results/${sequence}_${run:3}_tfce_corrp_tstat1_cr.nii \
+      -bin 0.95 \
+      -o $DIR_grp_results/${sequence}_${run:3}_tfce_corrp_tstat1_cr_950.nii
+    sct_maths \
+      -i $DIR_grp_results/${sequence}_${run:3}_tfce_corrp_tstat1_cr.nii \
+      -bin 0.99 \
+      -o $DIR_grp_results/${sequence}_${run:3}_tfce_corrp_tstat1_cr_990.nii
+    sct_maths \
+      -i $DIR_grp_results/${sequence}_${run:3}_tfce_corrp_tstat1_cr.nii \
+      -bin 0.999 \
+      -o $DIR_grp_results/${sequence}_${run:3}_tfce_corrp_tstat1_cr_999.nii
+  done
+done
+
+#--------------------------------------------------------------------------------------------------------------------------------
+echo "dice coefficient for p = 0.05 0.01 0.001" >$DIR_grp_results/00_dice_coefficient.txt
+for b in ${!sequence_all[@]}; do
+  sequence=${sequence_all[$b]}
+  echo $sequence >>$DIR_grp_results/00_dice_coefficient.txt
+  sct_dice_coefficient \
+    -i $DIR_grp_results/${sequence}_run1_tfce_corrp_tstat1_cr_950.nii \
+    -d $DIR_grp_results/${sequence}_run2_tfce_corrp_tstat1_cr_950.nii \
+    |& tee >(tail -1 >>$DIR_grp_results/00_dice_coefficient.txt)
+  sct_dice_coefficient \
+    -i $DIR_grp_results/${sequence}_run1_tfce_corrp_tstat1_cr_990.nii \
+    -d $DIR_grp_results/${sequence}_run2_tfce_corrp_tstat1_cr_990.nii \
+    |& tee >(tail -1 >>$DIR_grp_results/00_dice_coefficient.txt)
+  sct_dice_coefficient \
+    -i $DIR_grp_results/${sequence}_run1_tfce_corrp_tstat1_cr_999.nii \
+    -d $DIR_grp_results/${sequence}_run2_tfce_corrp_tstat1_cr_999.nii \
+    |& tee >(tail -1 >>$DIR_grp_results/00_dice_coefficient.txt)
+done

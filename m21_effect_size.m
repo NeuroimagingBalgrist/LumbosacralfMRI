@@ -1,6 +1,9 @@
 clc; clearvars; close all;
 
 %% Prepare variable and building blocks
+dir = '*';
+dir_processing = sprintf('%s/03_Processing', dir);
+dir_results = sprintf('%s/04_Results/21_effect_size', dir);
 subject = {'sub-01' 'sub-02' 'sub-03' 'sub-04' 'sub-05' 'sub-06' 'sub-07' 'sub-08' 'sub-09' 'sub-10' 'sub-11' 'sub-12' };
 sequence = {'ovs_pf68' 'zoomit_pf68' 'zoomit_pf78' 'zoomit_pfno'};
 run_dir = {'02_run1' '03_run2'};
@@ -18,7 +21,7 @@ for sub = 1:length(subject)
 %     for seq = 1:1
         for run = 1:length(run_dir)
             TR = TR_sequence(seq);
-            DIR_effectsize = sprintf('/*/%s/func/derivatives/%s/%s/effect_size',subject{sub}, sequence{seq}, run_dir{run});
+            DIR_effectsize = sprintf('%s/%s/func/derivatives/%s/%s/effect_size', dir_processing, subject{sub}, sequence{seq}, run_dir{run});
             disp(DIR_effectsize)
 
             beta0_path  = sprintf('%s/mean_func.nii', DIR_effectsize);
@@ -120,11 +123,11 @@ for seq = 1:4
     end
 end
 
-fileID = fopen('*/effect_size/overview.txt','w');
+fileID = fopen(sprintf('%s/overview.txt', dir_results),'w');
 fprintf(fileID, 'OVS20 mean = %0.3f, std = %0.3f\n', mean([results.("OVS20-02_run1-percent"); results.("OVS20-03_run2-percent")]), std([results.("OVS20-02_run1-percent"); results.("OVS20-03_run2-percent")]));
 fprintf(fileID, 'iFOV28 mean = %0.3f, std = %0.3f\n', mean([results.("iFOV28-02_run1-percent"); results.("iFOV28-03_run2-percent")]), std([results.("iFOV28-02_run1-percent"); results.("iFOV28-03_run2-percent")]));
 fprintf(fileID, 'iFOV35 mean = %0.3f, std = %0.3f\n', mean([results.("iFOV35-02_run1-percent"); results.("iFOV35-03_run2-percent")]), std([results.("iFOV35-02_run1-percent"); results.("iFOV35-03_run2-percent")]));
 fprintf(fileID, 'iFOV42 mean = %0.3f, std = %0.3f\n', mean([results.("iFOV42-02_run1-percent"); results.("iFOV42-03_run2-percent")]), std([results.("iFOV42-02_run1-percent"); results.("iFOV42-03_run2-percent")]));
 fclose(fileID);
 
-writetable(results, '*/effect_size/results.csv')
+writetable(results, sprintf('%s/results.csv', dir_results))

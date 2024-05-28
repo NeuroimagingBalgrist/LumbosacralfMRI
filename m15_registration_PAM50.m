@@ -16,9 +16,9 @@ function m15_registration_PAM50(anat,txtfile)
     lsetxt = sprintf('%s/megre3d_cr_lse.txt', txtfilepath);
     writematrix(areadata{1,1}(index),lsetxt)
 
-    % Create image matrix with 0 and label 19 at index slice for the LSE.
+    % Create image matrix with 0 and label 59 at index slice for the LSE.
     image = zeros(97,97,20);
-    image(49,49,areadata{1,1}(index)) = 19;
+    image(49,49,areadata{1,1}(index)) = 59;
 
     % Get header from the megre3d and write with newly created matrix.
     A = spm_vol(anat);

@@ -2,8 +2,8 @@
 
 subject=$1
 
-directory=$(dirname $subject)
-mask_pam50=$directory/grplvl_mask/PAM50_cord_region_RV-MV_L2-S1.nii.gz
+directory=$(dirname $(dirname $subject))
+mask_pam50=$directory/04_Results/18_grplvl_mask/PAM50_region_RV-MV_L4-S1.nii.gz
 
 
 # Backtransform from PAM50 to subject megre

@@ -7,12 +7,14 @@ cope_zmit68=func/derivatives/zoomit_pf68/lvl2template.feat/stats/cope1.nii.gz
 cope_zmit78=func/derivatives/zoomit_pf78/lvl2template.feat/stats/cope1.nii.gz
 cope_zmitno=func/derivatives/zoomit_pfno/lvl2template.feat/stats/cope1.nii.gz
 
-DIR_grp=$DIR/grplvl_noise
+DIR_grp=$(dirname $DIR)/04_Results/grplvl_noise
 
 mask=$DIR_grp/PAM50_cord_cr.nii.gz
 sct_crop_image \
   -i $SCT_DIR/data/PAM50/template/PAM50_cord.nii.gz  \
-  -zmin 50 -zmax 231 \
+  -xmin 35 -xmax 105 \
+  -ymin 35 -ymax 105 \
+  -zmin 40 -zmax 220 \
   -o $mask
 
 
@@ -37,15 +39,17 @@ cope12=$DIR/sub-13n/$cope_zmitno
 sct_image \
   -i $cope1 $cope2 $cope3 $cope4 $cope5 $cope6 $cope7 $cope8 $cope9 $cope10 $cope11 $cope12 \
   -concat t \
-  -o $DIR_grp/noise_cope_concat.nii
+  -o $DIR_grp/noise_cope_concat.nii.gz
 
 sct_crop_image \
-  -i $DIR_grp/noise_cope_concat.nii \
-  -zmin 50  -zmax 231 \
-  -o $DIR_grp/noise_cope_concat_cr.nii
+  -i $DIR_grp/noise_cope_concat.nii.gz \
+  -xmin 35 -xmax 105 \
+  -ymin 35 -ymax 105 \
+  -zmin 40  -zmax 220 \
+  -o $DIR_grp/noise_cope_concat_cr.nii.gz
 
 randomise \
-  -i $DIR_grp/noise_cope_concat_cr.nii \
+  -i $DIR_grp/noise_cope_concat_cr.nii.gz \
   -o $DIR_grp/noise \
   -m $mask \
   -1 -v 5 -T
@@ -60,14 +64,14 @@ mkdir -p $DIR_grp_results
 
 sct_crop_image \
   -i $DIR_grp/noise_tstat1.nii.gz \
-  -xmin 55 -xmax 85 \
-  -ymin 55 -ymax 85 \
+  -xmin 20 -xmax 50 \
+  -ymin 20 -ymax 50 \
   -o $DIR_grp_results/noise_tstat1_cr.nii
 
 sct_crop_image \
   -i $DIR_grp/noise_tfce_corrp_tstat1.nii.gz \
-  -xmin 55 -xmax 85 \
-  -ymin 55 -ymax 85 \
+  -xmin 20 -xmax 50 \
+  -ymin 20 -ymax 50 \
   -o $DIR_grp_results/noise_tfce_corrp_tstat1_cr.nii
 
 
@@ -75,12 +79,12 @@ sct_crop_image \
   -i $SCT_DIR/data/PAM50/template/PAM50_cord.nii.gz \
   -xmin 55 -xmax 85 \
   -ymin 55 -ymax 85 \
-  -zmin 50 -zmax 231 \
+  -zmin 40  -zmax 220 \
   -o $DIR_grp_results/PAM50_cord_cr.nii
 
 sct_crop_image \
   -i $SCT_DIR/data/PAM50/template/PAM50_t2.nii.gz \
   -xmin 55 -xmax 85 \
   -ymin 55 -ymax 85 \
-  -zmin 50 -zmax 231 \
+  -zmin 40  -zmax 220 \
   -o $DIR_grp_results/PAM50_t2_cr.nii

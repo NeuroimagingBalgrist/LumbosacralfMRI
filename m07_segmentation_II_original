@@ -1,0 +1,149 @@
+#!/bin/bash
+
+input=${2::-4}_mc.nii
+anat=$1
+
+DIR=$(dirname $(dirname $input))
+DIR_anat=$(dirname $anat)
+NAME=$(basename $input)
+
+regrun=$DIR/reg_runs
+
+# MASK ANAT
+cp $regrun/megre3d_cr_msc_jim.nii $DIR_anat
+
+matlab -nodisplay -r "m07_segmentation_II_anat('"$DIR_anat/megre3d_cr_msc_jim.nii"'); quit"
+
+sct_maths \
+  -i $DIR_anat/megre3d_cr_msc_jim_cor.nii \
+  -bin 0.01 \
+  -o $DIR_anat/megre3d_cr_msc_man.nii
+
+# MASK CS
+sct_maths \
+  -i $regrun/${NAME::-4}_msc_jim.nii \
+  -bin 0.1 \
+  -o $regrun/${NAME::-4}_msc_jim_bin.nii
+
+sct_image \
+  -i ${input::-4}_mean.nii \
+  -copy-header $regrun/${NAME::-4}_msc_jim_bin.nii \
+  -o $regrun/${NAME::-4}_msc_man.nii
+
+# MASK CSF
+sct_maths \
+  -i $regrun/${NAME::-4}_mcsf_jim.nii \
+  -bin 0.1 \
+  -o $regrun/${NAME::-4}_mcsf_jim_bin.nii
+
+sct_image \
+  -i ${input::-4}_mean.nii \
+  -copy-header $regrun/${NAME::-4}_mcsf_jim_bin.nii \
+  -o $regrun/${NAME::-4}_mcsf_man.nii
+
+
+mean1=$DIR/run1/run1_ge_ep2d_cr_mc_mean.nii
+mean2=$DIR/run2/run2_ge_ep2d_cr_mc_mean.nii
+mean3=$DIR/run3/run3_ge_ep2d_cr_mc_mean.nii
+
+mask1sc=$DIR/run1/run1_ge_ep2d_cr_mc_msc_man.nii
+mask2sc=$DIR/run2/run2_ge_ep2d_cr_mc_msc_man.nii
+mask3sc=$DIR/run3/run3_ge_ep2d_cr_mc_msc_man.nii
+
+mask1csf=$DIR/run1/run1_ge_ep2d_cr_mc_mcsf_man.nii
+mask2csf=$DIR/run2/run2_ge_ep2d_cr_mc_mcsf_man.nii
+mask3csf=$DIR/run3/run3_ge_ep2d_cr_mc_mcsf_man.nii
+
+sct_register_multimodal \
+	-i $mean2 \
+	-d $mean1 \
+	-ofolder $regrun \
+  -o two2one.nii \
+	-owarp $regrun/warp_two2one.nii.gz \
+  -owarpinv $regrun/warp_one2two.nii.gz
+
+sct_register_multimodal \
+	-i $mean2 \
+	-d $mean3 \
+	-ofolder $regrun \
+  -o two2three.nii \
+	-owarp $regrun/warp_two2three.nii.gz \
+  -owarpinv $regrun/warp_three2two.nii.gz
+
+
+cp $regrun/${NAME::-4}_msc_man.nii $mask2sc
+cp $regrun/${NAME::-4}_mcsf_man.nii $mask2csf
+
+
+sct_apply_transfo \
+  -i $mask2sc \
+  -d $mean1 \
+  -w $regrun/warp_two2one.nii.gz \
+  -x nn\
+  -o $mask1sc
+
+sct_apply_transfo \
+  -i $mask2sc \
+  -d $mean3 \
+  -w $regrun/warp_two2three.nii.gz \
+  -x nn\
+  -o $mask3sc
+
+
+sct_apply_transfo \
+  -i $mask2csf \
+  -d $mean1 \
+  -w $regrun/warp_two2one.nii.gz \
+  -x nn\
+  -o $mask1csf
+
+sct_apply_transfo \
+  -i $mask2csf \
+  -d $mean3 \
+  -w $regrun/warp_two2three.nii.gz \
+  -x nn\
+  -o $mask3csf
+
+
+mc1=$DIR/run1/run1_ge_ep2d_cr_mc.nii
+mc2=$DIR/run2/run2_ge_ep2d_cr_mc.nii
+mc3=$DIR/run3/run3_ge_ep2d_cr_mc.nii
+
+
+
+matlab -nodisplay -r "m07_segmentation_II_detrend('"$mc1"', '"$DIR"/run1/temp_detrend.nii'); m07_segmentation_II_detrend('"$mc2"', '"$DIR"/run2/temp_detrend.nii'); m07_segmentation_II_detrend('"$mc3"', '"$DIR"/run3/temp_detrend.nii'); quit"
+echo Detrend Done!
+
+# === Compute tSNR
+sct_fmri_compute_tsnr -i $DIR/run1/temp_detrend.nii \
+  -o $DIR/run1/temp_detrend_tsnr.nii
+sct_fmri_compute_tsnr -i $DIR/run2/temp_detrend.nii \
+  -o $DIR/run2/temp_detrend_tsnr.nii
+sct_fmri_compute_tsnr -i $DIR/run3/temp_detrend.nii \
+  -o $DIR/run3/temp_detrend_tsnr.nii
+
+
+# === Overlay _tSNR with _msc
+sct_maths -i $DIR/run1/temp_detrend_tsnr.nii \
+  -mul $DIR/run1/*_msc_man.nii \
+  -o $DIR/run1/temp_detrend_tsnr_msc.nii
+sct_maths -i $DIR/run2/temp_detrend_tsnr.nii \
+  -mul $DIR/run2/*_msc_man.nii \
+  -o $DIR/run2/temp_detrend_tsnr_msc.nii
+sct_maths -i $DIR/run3/temp_detrend_tsnr.nii \
+  -mul $DIR/run3/*_msc_man.nii \
+  -o $DIR/run3/temp_detrend_tsnr_msc.nii
+
+
+# === Calculate Mean tSNR from _detrend_msc
+fslstats $DIR/run1/temp_detrend_tsnr_msc.nii \
+  -n -M >> ${mc1::-4}_tsnr.txt
+fslstats $DIR/run2/temp_detrend_tsnr_msc.nii \
+  -n -M >> ${mc2::-4}_tsnr.txt
+fslstats $DIR/run3/temp_detrend_tsnr_msc.nii \
+  -n -M >> ${mc3::-4}_tsnr.txt
+
+
+rm $DIR/run1/temp*
+rm $DIR/run2/temp*
+rm $DIR/run3/temp*

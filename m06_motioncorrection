@@ -5,27 +5,47 @@ output=${input::-4}_mc.nii
 
 DIR=$(dirname $input)
 
+mkdir -p $DIR/regressors
+NAMEout=$(basename $output)
+
+#-------------------------------------------------------------------------------
+# mcflirt Motion Correction (Rigid Body 6DOF)
 mcflirt -in $input \
   -meanvol \
-  -spline_final -cost leastsquares -report \
-  -o $DIR/temp_mcf.nii
+  -spline_final -cost leastsquares -report -plots\
+  -o $DIR/${NAMEout::-4}_mcf.nii
 
-sct_maths -i $DIR/temp_mcf.nii.gz -mean t -o $DIR/temp_mcf_mean.nii
-sct_get_centerline -i $DIR/temp_mcf_mean.nii -c t2s -o $DIR/temp_mcf_mean_centerline.nii
-sct_create_mask -i $DIR/temp_mcf_mean.nii -p centerline,$DIR/temp_mcf_mean_centerline.nii -size 20 -f cylinder -o $DIR/temp_mcf_mean_maskcy.nii
+gzip -f -d $DIR/${NAMEout::-4}_mcf.nii.gz
+mv $DIR/${NAMEout::-4}_mcf.nii.par $DIR/regressors/${NAMEout::-4}_params_mcf.txt
 
-sct_fmri_moco -i $DIR/temp_mcf.nii.gz \
-  -m $DIR/temp_mcf_mean_maskcy.nii \
+rm $DIR/${NAMEout::-4}_mcf.nii_mean_reg.nii.gz
+
+
+#-------------------------------------------------------------------------------
+# Creation of Centerline and Cylindric Mask
+sct_maths -i $DIR/${NAMEout::-4}_mcf.nii -mean t -o $DIR/temp_mcf_mean.nii
+sct_get_centerline -i $DIR/temp_mcf_mean.nii -c t2s -o $DIR/${NAMEout::-4}_mcf_celi.nii
+sct_create_mask \
+  -i $DIR/temp_mcf_mean.nii \
+  -p centerline,$DIR/${NAMEout::-4}_mcf_celi.nii \
+  -size 20 -f cylinder \
+  -o $DIR/${NAMEout::-4}_mcf_mcy.nii
+
+rm $DIR/temp_mcf_mean.nii
+rm $DIR/${NAMEout::-4}_mcf_celi.csv
+
+#-------------------------------------------------------------------------------
+# SCT Motion Correction (Slice Wise 2DOF)
+sct_fmri_moco -i $DIR/${NAMEout::-4}_mcf.nii \
+  -m $DIR/${NAMEout::-4}_mcf_mcy.nii \
   -g 1 -param poly=1,iterAvg=1 -x spline \
   -ofolder $DIR
 
-gzip -f -d $DIR/temp_mcf_moco.nii.gz
-
-mv $DIR/temp_mcf_moco.nii \
+mv $DIR/${NAMEout::-4}_mcf_moco.nii \
   $output
 
-mkdir -p $DIR/regressors
-NAMEout=$(basename $output)
+mv $DIR/${NAMEout::-4}_mcf_moco_mean.nii \
+  ${output::-4}_mean.nii
 
 gzip -f -d $DIR/moco_params_x.nii.gz
 mv $DIR/moco_params_x.nii \
@@ -35,7 +55,4 @@ gzip -f -d $DIR/moco_params_y.nii.gz
 mv $DIR/moco_params_y.nii \
   $DIR/regressors/${NAMEout::-4}_params_y.nii
 
-sct_maths -i $output -mean t -o ${output::-4}_mean.nii
-
-rm $DIR/temp*
-rm $DIR/moco_params*
+mv $DIR/moco_params.tsv $DIR/regressors/${NAMEout::-4}_params_sct.txt

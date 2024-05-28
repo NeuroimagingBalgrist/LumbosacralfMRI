@@ -2,17 +2,19 @@
 
 DIR=$1
 
-cope_ovs68=func/derivatives/ovs_pf68/lvl2template.feat/stats/cope1.nii.gz
+cope_ovs68=/func/derivatives/ovs_pf68/lvl2template.feat/stats/cope1.nii.gz
 cope_zmit68=func/derivatives/zoomit_pf68/lvl2template.feat/stats/cope1.nii.gz
 cope_zmit78=func/derivatives/zoomit_pf78/lvl2template.feat/stats/cope1.nii.gz
 cope_zmitno=func/derivatives/zoomit_pfno/lvl2template.feat/stats/cope1.nii.gz
 
-DIR_grp=$DIR/grplvl_rando
+DIR_grp=$(dirname $DIR)/04_Results/grplvl_rando
 
 mask=$DIR_grp/PAM50_cord_cr.nii.gz
 sct_crop_image \
   -i $SCT_DIR/data/PAM50/template/PAM50_cord.nii.gz  \
-  -zmin 50 -zmax 231 \
+  -xmin 35 -xmax 105 \
+  -ymin 35 -ymax 105 \
+  -zmin 40 -zmax 220 \
   -o $mask
 
 
@@ -34,15 +36,17 @@ cope12=$DIR/sub-12/$cope_ovs68
 sct_image \
   -i $cope1 $cope2 $cope3 $cope4 $cope5 $cope6 $cope7 $cope8 $cope9 $cope10 $cope11 $cope12 \
   -concat t \
-  -o $DIR_grp/ovs_pf68_cope_concat.nii
+  -o $DIR_grp/ovs_pf68_cope_concat.nii.gz
 
 sct_crop_image \
-  -i $DIR_grp/ovs_pf68_cope_concat.nii \
-  -zmin 50  -zmax 231 \
-  -o $DIR_grp/ovs_pf68_cope_concat_cr.nii
+  -i $DIR_grp/ovs_pf68_cope_concat.nii.gz \
+  -xmin 35 -xmax 105 \
+  -ymin 35 -ymax 105 \
+  -zmin 40 -zmax 220 \
+  -o $DIR_grp/ovs_pf68_cope_concat_cr.nii.gz
 
 randomise \
-  -i $DIR_grp/ovs_pf68_cope_concat_cr.nii \
+  -i $DIR_grp/ovs_pf68_cope_concat_cr.nii.gz \
   -o $DIR_grp/ovs_pf68 \
   -m $mask \
   -1 -v 5 -T
@@ -66,15 +70,17 @@ cope12=$DIR/sub-12/$cope_zmit68
 sct_image \
   -i $cope1 $cope2 $cope3 $cope4 $cope5 $cope6 $cope7 $cope8 $cope9 $cope10 $cope11 $cope12 \
   -concat t \
-  -o $DIR_grp/zoomit_pf68_cope_concat.nii
+  -o $DIR_grp/zoomit_pf68_cope_concat.nii.gz
 
 sct_crop_image \
-  -i $DIR_grp/zoomit_pf68_cope_concat.nii \
-  -zmin 50  -zmax 231 \
-  -o $DIR_grp/zoomit_pf68_cope_concat_cr.nii
+  -i $DIR_grp/zoomit_pf68_cope_concat.nii.gz \
+  -xmin 35 -xmax 105 \
+  -ymin 35 -ymax 105 \
+  -zmin 40 -zmax 220 \
+  -o $DIR_grp/zoomit_pf68_cope_concat_cr.nii.gz
 
 randomise \
-  -i $DIR_grp/zoomit_pf68_cope_concat_cr.nii \
+  -i $DIR_grp/zoomit_pf68_cope_concat_cr.nii.gz \
   -o $DIR_grp/zoomit_pf68 \
   -m $mask \
   -1 -v 5 -T
@@ -99,15 +105,17 @@ cope12=$DIR/sub-12/$cope_zmit78
 sct_image \
   -i $cope1 $cope2 $cope3 $cope4 $cope5 $cope6 $cope7 $cope8 $cope9 $cope10 $cope11 $cope12 \
   -concat t \
-  -o $DIR_grp/zoomit_pf78_cope_concat.nii
+  -o $DIR_grp/zoomit_pf78_cope_concat.nii.gz
 
 sct_crop_image \
-  -i $DIR_grp/zoomit_pf78_cope_concat.nii \
-  -zmin 50  -zmax 231 \
-  -o $DIR_grp/zoomit_pf78_cope_concat_cr.nii
+  -i $DIR_grp/zoomit_pf78_cope_concat.nii.gz \
+  -xmin 35 -xmax 105 \
+  -ymin 35 -ymax 105 \
+  -zmin 40 -zmax 220 \
+  -o $DIR_grp/zoomit_pf78_cope_concat_cr.nii.gz
 
 randomise \
-  -i $DIR_grp/zoomit_pf78_cope_concat_cr.nii \
+  -i $DIR_grp/zoomit_pf78_cope_concat_cr.nii.gz \
   -o $DIR_grp/zoomit_pf78 \
   -m $mask \
   -1 -v 5 -T
@@ -131,15 +139,17 @@ cope12=$DIR/sub-12/$cope_zmitno
 sct_image \
   -i $cope1 $cope2 $cope3 $cope4 $cope5 $cope6 $cope7 $cope8 $cope9 $cope10 $cope11 $cope12 \
   -concat t \
-  -o $DIR_grp/zoomit_pfno_cope_concat.nii
+  -o $DIR_grp/zoomit_pfno_cope_concat.nii.gz
 
 sct_crop_image \
-  -i $DIR_grp/zoomit_pfno_cope_concat.nii \
-  -zmin 50  -zmax 231 \
-  -o $DIR_grp/zoomit_pfno_cope_concat_cr.nii
+  -i $DIR_grp/zoomit_pfno_cope_concat.nii.gz \
+  -xmin 35 -xmax 105 \
+  -ymin 35 -ymax 105 \
+  -zmin 40 -zmax 220 \
+  -o $DIR_grp/zoomit_pfno_cope_concat_cr.nii.gz
 
 randomise \
-  -i $DIR_grp/zoomit_pfno_cope_concat_cr.nii \
+  -i $DIR_grp/zoomit_pfno_cope_concat_cr.nii.gz \
   -o $DIR_grp/zoomit_pfno \
   -m $mask \
   -1 -v 5 -T

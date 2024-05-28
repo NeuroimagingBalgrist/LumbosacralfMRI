@@ -1,0 +1,124 @@
+#!/bin/bash
+
+directory=*
+DIR_results=$directory/04_results/25_registration_quality
+mkdir -vp $DIR_results
+
+#-------------------------------------------------------------------------------
+# Get spinal cord mask from PAM50
+sct_crop_image \
+  -i $SCT_DIR/data/PAM50/template/PAM50_cord.nii.gz \
+  -xmin 55 -xmax 85 \
+  -ymin 55 -ymax 85 \
+  -zmin 40 -zmax 220 \
+  -o $DIR_results/PAM50_cord_cr.nii.gz
+
+#-------------------------------------------------------------------------------
+# Mean anat2template image
+anat2temp_list=(`ls $directory/03_Processing/*/anat/derivatives/reg_temp/anat2template.nii`)
+anat2temp=$DIR_results/anat2template_cr.nii.gz
+
+sct_image \
+  -i ${anat2temp_list[@]} \
+  -concat t \
+  -o $anat2temp
+
+sct_crop_image \
+  -i $anat2temp \
+  -xmin 55 -xmax 85 \
+  -ymin 55 -ymax 85 \
+  -zmin 40 -zmax 220 \
+  -o $anat2temp
+
+sct_maths \
+  -i $anat2temp \
+  -mean t \
+  -o ${anat2temp::-7}_mean.nii.gz
+
+#-------------------------------------------------------------------------------
+# Mean ovs_pf682template image
+ovs_pf68_run12temp_list=(`ls $directory/03_Processing/*/anat/derivatives/reg_temp/ovs_pf68_run12template.nii`)
+ovs_pf68_run12temp=$DIR_results/ovs_pf68_run12template_cr.nii.gz
+
+sct_image \
+  -i ${ovs_pf68_run12temp_list[@]} \
+  -concat t \
+  -o $ovs_pf68_run12temp
+
+sct_crop_image \
+  -i $ovs_pf68_run12temp \
+  -xmin 55 -xmax 85 \
+  -ymin 55 -ymax 85 \
+  -zmin 40 -zmax 220 \
+  -o $ovs_pf68_run12temp
+
+sct_maths \
+  -i $ovs_pf68_run12temp \
+  -mean t \
+  -o ${ovs_pf68_run12temp::-7}_mean.nii.gz
+
+#-------------------------------------------------------------------------------
+# Mean zoomit_pf682template image
+zoomit_pf68_run12temp_list=(`ls $directory/03_Processing/*/anat/derivatives/reg_temp/zoomit_pf68_run12template.nii`)
+zoomit_pf68_run12temp=$DIR_results/zoomit_pf68_run12template_cr.nii.gz
+
+sct_image \
+  -i ${zoomit_pf68_run12temp_list[@]} \
+  -concat t \
+  -o $zoomit_pf68_run12temp
+
+sct_crop_image \
+  -i $zoomit_pf68_run12temp \
+  -xmin 55 -xmax 85 \
+  -ymin 55 -ymax 85 \
+  -zmin 40 -zmax 220 \
+  -o $zoomit_pf68_run12temp
+
+sct_maths \
+  -i $zoomit_pf68_run12temp \
+  -mean t \
+  -o ${zoomit_pf68_run12temp::-7}_mean.nii.gz
+
+#-------------------------------------------------------------------------------
+# Mean zoomit_pf782template image
+zoomit_pf78_run12temp_list=(`ls $directory/03_Processing/*/anat/derivatives/reg_temp/zoomit_pf78_run12template.nii`)
+zoomit_pf78_run12temp=$DIR_results/zoomit_pf78_run12template_cr.nii.gz
+
+sct_image \
+  -i ${zoomit_pf78_run12temp_list[@]} \
+  -concat t \
+  -o $zoomit_pf78_run12temp
+
+sct_crop_image \
+  -i $zoomit_pf78_run12temp \
+  -xmin 55 -xmax 85 \
+  -ymin 55 -ymax 85 \
+  -zmin 40 -zmax 220 \
+  -o $zoomit_pf78_run12temp
+
+sct_maths \
+  -i $zoomit_pf78_run12temp \
+  -mean t \
+  -o ${zoomit_pf78_run12temp::-7}_mean.nii.gz
+
+#-------------------------------------------------------------------------------
+# Mean zoomit_pfno2template image
+zoomit_pfno_run12temp_list=(`ls $directory/03_Processing/*/anat/derivatives/reg_temp/zoomit_pfno_run12template.nii`)
+zoomit_pfno_run12temp=$DIR_results/zoomit_pfno_run12template_cr.nii.gz
+
+sct_image \
+  -i ${zoomit_pfno_run12temp_list[@]} \
+  -concat t \
+  -o $zoomit_pfno_run12temp
+
+sct_crop_image \
+  -i $zoomit_pfno_run12temp \
+  -xmin 55 -xmax 85 \
+  -ymin 55 -ymax 85 \
+  -zmin 40 -zmax 220 \
+  -o $zoomit_pfno_run12temp
+
+sct_maths \
+  -i $zoomit_pfno_run12temp \
+  -mean t \
+  -o ${zoomit_pfno_run12temp::-7}_mean.nii.gz

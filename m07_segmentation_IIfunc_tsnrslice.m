@@ -10,7 +10,7 @@ function m07_segmentation_IIfunc_tsnrslice(input, output)
         mean_slice(i) = mean(nonzeros(data(:,:,i)));
 
     end
-
+      
     writematrix(mean_slice,output)
 
     disp('matlab done!')

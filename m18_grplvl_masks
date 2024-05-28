@@ -2,41 +2,106 @@
 
 DIR=$1
 
-DIR_grp=$DIR/grplvl_mask
+DIR_neuro=$DIR/90_neuro_segm
+DIR_axial=$DIR/90_axial_segm
 
-DIR_crop=$DIR_grp/crop
-rm -rf $DIR_crop
-mkdir -p $DIR_crop
+DIR_grpmask=$DIR/18_grplvl_mask
+rm -rf $DIR_grpmask
+mkdir -vp $DIR_grpmask
+
+# Make neuro L3-S3
+neuro_all=$DIR_grpmask/PAM50_neuro_L3-S3.nii.gz
+
+sct_maths \
+  -i $DIR_neuro/PAM50_neuro_L3.nii.gz \
+  -add $DIR_neuro/PAM50_neuro_L4.nii.gz \
+  $DIR_neuro/PAM50_neuro_L5.nii.gz \
+  $DIR_neuro/PAM50_neuro_S1.nii.gz \
+  $DIR_neuro/PAM50_neuro_S2.nii.gz \
+  $DIR_neuro/PAM50_neuro_S3.nii.gz \
+  -type uint8 \
+  -o $neuro_all
+
+# Creat regions from axial x neuro
+sct_maths \
+  -i $neuro_all \
+  -mul $DIR_axial/PAM50_cord_area_LD.nii.gz -type uint8 \
+  -o $DIR_grpmask/PAM50_region_LD_L3-S3.nii.gz
+sct_maths \
+  -i $neuro_all \
+  -mul $DIR_axial/PAM50_cord_area_LV.nii.gz -type uint8 \
+  -o $DIR_grpmask/PAM50_region_LV_L3-S3.nii.gz
+sct_maths \
+  -i $neuro_all \
+  -mul $DIR_axial/PAM50_cord_area_RD.nii.gz -type uint8 \
+  -o $DIR_grpmask/PAM50_region_RD_L3-S3.nii.gz
+sct_maths \
+  -i $neuro_all \
+  -mul $DIR_axial/PAM50_cord_area_RV.nii.gz -type uint8 \
+  -o $DIR_grpmask/PAM50_region_RV_L3-S3.nii.gz
+sct_maths \
+  -i $neuro_all \
+  -mul $DIR_axial/PAM50_region_MV_L2-S5.nii.gz -type uint8 \
+  -o $DIR_grpmask/PAM50_region_MV_L3-S3.nii.gz
+
+
+# Remove MV from LV and RV
+sct_maths \
+  -i $DIR_grpmask/PAM50_region_RV_L3-S3.nii.gz \
+  -mul $DIR_grpmask/PAM50_region_MV_L3-S3.nii.gz \
+  -o $DIR_grpmask/PAM50_region_RV-MV_L3-S3.nii.gz
+sct_maths \
+  -i $DIR_grpmask/PAM50_region_RV_L3-S3.nii.gz \
+  -sub $DIR_grpmask/PAM50_region_RV-MV_L3-S3.nii.gz \
+  -type uint8 \
+  -o $DIR_grpmask/PAM50_region_RV-MV_L3-S3.nii.gz
+
+sct_maths \
+  -i $DIR_grpmask/PAM50_region_LV_L3-S3.nii.gz \
+  -mul $DIR_grpmask/PAM50_region_MV_L3-S3.nii.gz \
+  -o $DIR_grpmask/PAM50_region_LV-MV_L3-S3.nii.gz
+sct_maths \
+  -i $DIR_grpmask/PAM50_region_LV_L3-S3.nii.gz \
+  -sub $DIR_grpmask/PAM50_region_LV-MV_L3-S3.nii.gz \
+  -type uint8 \
+  -o $DIR_grpmask/PAM50_region_LV-MV_L3-S3.nii.gz
+
+
+# Make PAM50_region_RV-MV_L4-S1.nii.gz or effect size
+sct_maths \
+  -i $DIR_neuro/PAM50_neuro_L4.nii.gz \
+  -add $DIR_neuro/PAM50_neuro_L5.nii.gz \
+  $DIR_neuro/PAM50_neuro_S1.nii.gz \
+  -o $DIR_grpmask/PAM50_region_RV-MV_L4-S1.nii.gz
+sct_maths \
+  -i $DIR_grpmask/PAM50_region_RV-MV_L3-S3.nii.gz \
+  -mul $DIR_grpmask/PAM50_region_RV-MV_L4-S1.nii.gz \
+  -type uint8 \
+  -o $DIR_grpmask/PAM50_region_RV-MV_L4-S1.nii.gz
+
+
+DIR_crop=$DIR_grpmask/crop
+mkdir -vp $DIR_crop
 
 
 subjectall=( \
-  $DIR_grp/PAM50_cord.nii.gz \
-  # $DIR_grp/PAM50_cord_area_LD.nii.gz \
-  # $DIR_grp/PAM50_cord_area_LV.nii.gz \
-  # $DIR_grp/PAM50_cord_area_RD.nii.gz \
-  # $DIR_grp/PAM50_cord_area_RV.nii.gz \
-  # $DIR_grp/PAM50_cord_hemi_D.nii.gz \
-  # $DIR_grp/PAM50_cord_hemi_L.nii.gz \
-  # $DIR_grp/PAM50_cord_hemi_R.nii.gz \
-  # $DIR_grp/PAM50_cord_hemi_V.nii.gz \
-  # $DIR_grp/PAM50_cord_neuro_L1.nii.gz \
-  $DIR_grp/PAM50_cord_neuro_L2.nii.gz \
-  $DIR_grp/PAM50_cord_neuro_L3.nii.gz \
-  $DIR_grp/PAM50_cord_neuro_L4.nii.gz \
-  $DIR_grp/PAM50_cord_neuro_L5.nii.gz \
-  $DIR_grp/PAM50_cord_neuro_S1.nii.gz \
-  $DIR_grp/PAM50_cord_neuro_S2.nii.gz \
-  $DIR_grp/PAM50_cord_neuro_S3.nii.gz \
-  $DIR_grp/PAM50_cord_neuro_S4.nii.gz \
-  # $DIR_grp/PAM50_cord_neuro_S5.nii.gz \
-  $DIR_grp/PAM50_cord_region_LD_L3-S3.nii.gz \
-  $DIR_grp/PAM50_cord_region_LV_L3-S3.nii.gz \
-  $DIR_grp/PAM50_cord_region_LV-MV_L3-S3.nii.gz
-  $DIR_grp/PAM50_cord_region_MV_L3-S3.nii.gz \
-  $DIR_grp/PAM50_cord_region_RD_L3-S3.nii.gz \
-  $DIR_grp/PAM50_cord_region_RV_L3-S3.nii.gz \
-  $DIR_grp/PAM50_cord_region_RV-MV_L3-S3.nii.gz \
-  $DIR_grp/PAM50_cord_region_SC_L3-S3.nii.gz \
+  $DIR_axial/PAM50_cord.nii.gz \
+  $DIR_neuro/PAM50_neuro_L2.nii.gz \
+  $DIR_neuro/PAM50_neuro_L3.nii.gz \
+  $DIR_neuro/PAM50_neuro_L4.nii.gz \
+  $DIR_neuro/PAM50_neuro_L5.nii.gz \
+  $DIR_neuro/PAM50_neuro_S1.nii.gz \
+  $DIR_neuro/PAM50_neuro_S2.nii.gz \
+  $DIR_neuro/PAM50_neuro_S3.nii.gz \
+  $DIR_neuro/PAM50_neuro_S4.nii.gz \
+  $DIR_grpmask/PAM50_region_LD_L3-S3.nii.gz \
+  $DIR_grpmask/PAM50_region_LV_L3-S3.nii.gz \
+  $DIR_grpmask/PAM50_region_LV-MV_L3-S3.nii.gz
+  $DIR_grpmask/PAM50_region_MV_L3-S3.nii.gz \
+  $DIR_grpmask/PAM50_region_RD_L3-S3.nii.gz \
+  $DIR_grpmask/PAM50_region_RV_L3-S3.nii.gz \
+  $DIR_grpmask/PAM50_region_RV-MV_L3-S3.nii.gz \
+  $DIR_grpmask/PAM50_neuro_L3-S3.nii.gz \
   )
 
 
@@ -44,17 +109,12 @@ for i in ${!subjectall[@]}; do
   workfile=${subjectall[$i]}
   workname=$(basename $workfile)
 
-  echo $DIR_crop/${workname:0:10}_cr${workname:10}
+  echo $DIR_crop/${workname:0:5}_cr${workname:5}
 
   sct_crop_image \
     -i $workfile \
-    -xmin 55 -ymin 55 -zmin 50 \
-    -xmax 85 -ymax 85 -zmax 231 \
-    -o $DIR_crop/${workname:0:10}_cr${workname:10:-3}
-
-  # sct_image \
-  #   -i $DIR_crop/PAM50_cord_cr.nii.gz \
-  #   -o $DIR_crop/${workname:0:10}_cr${workname:10:-3} \
-  #   -type uint8
-
+    -xmin 55 -xmax 85 \
+    -ymin 55 -ymax 85 \
+    -zmin 40 -zmax 220 \
+    -o $DIR_crop/${workname:0:5}_cr${workname:5:-3}
 done

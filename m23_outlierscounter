@@ -27,7 +27,7 @@ sequenceall=( \
   )
 
 
-PART1=/media/chkuendig/chkuendig/LufMRI/10_protcol_optimization/03_base_comp/
+PART1=*
 PART2=/func/derivatives/
 PART31=/02_run1/regressors/*outlier*.nii
 PART32=/03_run2/regressors/*outlier*.nii
